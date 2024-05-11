@@ -1,0 +1,13 @@
+(
+    config_devices: [
+        (
+           pci: Some("0000:03:00.0"),
+           entries: [
+               (name: "MonsterHunterWorld.exe", pstate: "Standard"),
+               (name: "mgsvtpp.exe", pstate: "Peak"),
+               (name: "Dolphin.exe", pstate: "None"),
+               // (name: "firefox-esr", pstate: "None"),
+           ],
+        )
+    ],
+)

@@ -1,0 +1,11 @@
+[package]
+name = "amdgpu-stable-pstate-switcher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libamdgpu_top = { git = "https://github.com/Umio-Yasuno/amdgpu_top" }
+libdrm_amdgpu_sys = { git = "https://github.com/Umio-Yasuno/libdrm-amdgpu-sys-rs" }
+proc_prog_name = "0.1.0"
+ron = "0.8.1"
+serde = { version = "1.0.201", features = ["derive"] }
