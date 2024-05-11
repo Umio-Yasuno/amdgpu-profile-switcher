@@ -1,5 +1,5 @@
 use libdrm_amdgpu_sys::{AMDGPU, PCI};
-use AMDGPU::StablePstateFlag;
+use AMDGPU::{PowerProfile, DpmForcedLevel};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
@@ -16,7 +16,8 @@ pub struct ParsedConfigPerDevice {
 #[derive(Debug, Clone)]
 pub struct ParsedConfigEntry {
     pub name: String,
-    pub pstate: StablePstateFlag,
+    pub perf_level: Option<DpmForcedLevel>,
+    pub profile: Option<PowerProfile>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -26,14 +27,15 @@ pub struct Config {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigPerDevice {
-    pub pci: Option<String>,
+    pub pci: String,
     pub entries: Vec<ConfigEntry>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigEntry {
     pub name: String,
-    pub pstate: String,
+    pub perf_level: Option<String>,
+    pub profile: Option<String>,
 }
 
 impl Config {
@@ -50,37 +52,80 @@ impl Config {
 
 impl ConfigPerDevice {
     fn parse(&self) -> ParsedConfigPerDevice {
-        let pci = self.pci.as_ref().expect("`pci` is `None`.");
-        let pci: PCI::BUS_INFO = pci.parse().unwrap_or_else(|_| panic!("Parse Error: {:?}", pci));
+        let pci: PCI::BUS_INFO = self.pci.parse().unwrap_or_else(|_| panic!("Parse Error: {:?}", self.pci));
 
         if self.entries.is_empty() {
             panic!("`entries` for {pci} is empty.");
         }
 
-        let entries = self.entries.iter().map(|entry| {
-            if entry.name.is_empty() {
-                panic!("`name` for {pci} is empty.")
-            }
-
-            let name = entry.name.clone();
-            let pstate = stable_pstate_flag_from_str(&entry.pstate).unwrap_or_else(|| panic!("`pstate` for {pci} ({entry:?}) is invalid. (Must be one of: None, Standard, Peak, MinSclk, MinMclk)"));
-
-            ParsedConfigEntry { name, pstate }
-        }).collect();
+        let entries = self.entries.iter().map(|entry| entry.parse(&pci)).collect();
 
         ParsedConfigPerDevice { pci, entries }
     }
 }
 
-fn stable_pstate_flag_from_str(s: &str) -> Option<StablePstateFlag> {
-    let flag = match s {
-        "None" => StablePstateFlag::NONE,
-        "Standard" => StablePstateFlag::STANDARD,
-        "MinSclk" => StablePstateFlag::MIN_SCLK,
-        "MinMclk" => StablePstateFlag::MIN_MCLK,
-        "Peak" => StablePstateFlag::PEAK,
+impl ConfigEntry {
+    fn parse(&self, pci: &PCI::BUS_INFO) -> ParsedConfigEntry {
+        if self.name.is_empty() {
+            panic!("`name` for {pci} is empty.")
+        }
+
+        let name = self.name.clone();
+        let perf_level = self.perf_level.as_ref().and_then(|s| {
+            let perf_level = perf_level_from_str(s);
+
+            if perf_level.is_none() {
+                panic!("`perf_level` for {pci} ({:?}) is invalid.", self);
+            }
+
+            perf_level
+        });
+        let profile = self.profile.as_ref().and_then(|s| {
+            let profile = power_profile_from_str(s);
+
+            if profile.is_none() {
+                panic!("`profile` for {pci} ({:?}) is invalid.", self);
+            }
+
+            profile
+        });
+
+        ParsedConfigEntry { name, perf_level, profile }
+    }
+}
+
+fn perf_level_from_str(s: &str) -> Option<DpmForcedLevel> {
+    let perf_level = match s {
+        "auto" => DpmForcedLevel::Auto,
+        "low" => DpmForcedLevel::Low,
+        "high" => DpmForcedLevel::High,
+        "manual" => DpmForcedLevel::Manual,
+        "profile_standard" => DpmForcedLevel::ProfileStandard,
+        "profile_peak" => DpmForcedLevel::ProfilePeak,
+        "profile_min_sclk" => DpmForcedLevel::ProfileMinSclk,
+        "profile_min_mclk" => DpmForcedLevel::ProfileMinMclk,
+        "profile_exit" => DpmForcedLevel::ProfileExit,
+        "perf_determinism" => DpmForcedLevel::PerfDeterminism,
         _ => return None,
     };
 
-    Some(flag)
+    Some(perf_level)
+}
+
+fn power_profile_from_str(s: &str) -> Option<PowerProfile> {
+    let pp = match s {
+        "BOOTUP_DEFAULT" => PowerProfile::BOOTUP_DEFAULT,
+        "3D_FULL_SCREEN" => PowerProfile::FULLSCREEN3D,
+        "POWER_SAVING" => PowerProfile::POWERSAVING,
+        "VIDEO" => PowerProfile::VIDEO,
+        "VR" => PowerProfile::VR,
+        "COMPUTE" => PowerProfile::COMPUTE,
+        "CUSTOM" => PowerProfile::CUSTOM,
+        "WINDOW_3D" => PowerProfile::WINDOW3D,
+        "CAPPED" => PowerProfile::CAPPED,
+        "UNCAPPED" => PowerProfile::UNCAPPED,
+        _ => return None,
+    };
+
+    Some(pp)
 }

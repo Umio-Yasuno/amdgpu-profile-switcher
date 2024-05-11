@@ -1,30 +1,27 @@
-use libdrm_amdgpu_sys::AMDGPU::{self, ContextHandle, DeviceHandle};
+use std::path::PathBuf;
+
 use libdrm_amdgpu_sys::PCI;
 
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
-    pub ctx: ContextHandle, // must drop before DeviceHandle
-    pub amdgpu_dev: DeviceHandle,
+    pub sysfs_path: PathBuf,
+    pub power_profile_path: PathBuf,
 }
 
 impl AmdgpuDevice {
     pub fn get_from_pci_bus(pci_bus: PCI::BUS_INFO) -> Option<Self> {
-        let device_path = pci_bus.get_drm_render_path().ok()?;
-        let (amdgpu_dev, _major, _minor) = {
-            use std::fs::File;
-            use std::os::fd::IntoRawFd;
+        let sysfs_path = pci_bus.get_sysfs_path();
+        let power_profile_path = sysfs_path.join("pp_power_profile_mode");
+        let dpm_perf_level_path = sysfs_path.join("power_dpm_force_performance_level");
 
-            let fd = File::open(device_path).ok()?;
-
-            DeviceHandle::init(fd.into_raw_fd()).ok()?
-        };
-
-        let ctx = amdgpu_dev.create_context().ok()?;
+        if !power_profile_path.exists() || !dpm_perf_level_path.exists() {
+            return None;
+        }
 
         Some(Self {
             pci_bus,
-            ctx,
-            amdgpu_dev,
+            sysfs_path,
+            power_profile_path,
         })
     }
 }
