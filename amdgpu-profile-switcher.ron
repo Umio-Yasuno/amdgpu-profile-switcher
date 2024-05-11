@@ -47,7 +47,7 @@
             entries: [
                 (name: "MonsterHunterWorld.exe", profile: Some("3D_FULL_SCREEN")),
                 (name: "mgsvtpp.exe", profile: Some("3D_FULL_SCREEN")),
-                (name: "firefox-esr", profile: Some("3D_FULL_SCREEN")),
+                (name: "firefox-esr", perf_level: Some("auto")),
             ],
         )
     ],

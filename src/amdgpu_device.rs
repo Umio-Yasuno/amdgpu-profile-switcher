@@ -6,6 +6,7 @@ pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
     pub sysfs_path: PathBuf,
     pub power_profile_path: PathBuf,
+    pub dpm_perf_level_path: PathBuf,
 }
 
 impl AmdgpuDevice {
@@ -22,6 +23,7 @@ impl AmdgpuDevice {
             pci_bus,
             sysfs_path,
             power_profile_path,
+            dpm_perf_level_path,
         })
     }
 }

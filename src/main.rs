@@ -25,7 +25,7 @@ struct AppDevice {
 impl AppDevice {
     fn set_perf_level(&self, perf_level: DpmForcedLevel) {
         let perf_level = perf_level.to_arg();
-        std::fs::write(&self.amdgpu_device.sysfs_path, perf_level)
+        std::fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level)
             .unwrap_or_else(|e| panic!("IO Error: {e}"));
     }
 
@@ -36,7 +36,7 @@ impl AppDevice {
             DpmForcedLevel::Auto |
             DpmForcedLevel::Manual => {},
             _ => {
-                std::fs::write(&self.amdgpu_device.sysfs_path, DpmForcedLevel::Auto.to_arg())
+                std::fs::write(&self.amdgpu_device.dpm_perf_level_path, DpmForcedLevel::Auto.to_arg())
                     .unwrap_or_else(|e| panic!("IO Error: {e}"));
             },
         }
