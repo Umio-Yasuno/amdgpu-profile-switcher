@@ -1,21 +1,18 @@
-use std::fs::File;
-use std::path::{Path, PathBuf};
-
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
 
 use proc_prog_name::ProcProgEntry;
-use ron::de;
 use log::debug;
 
-mod config;
-use config::{Config, ParsedConfig, ParsedConfigEntry};
+pub mod config;
 
 mod amdgpu_device;
 use amdgpu_device::AmdgpuDevice;
 
 mod args;
 use args::MainOpt;
+
+mod util;
 
 struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
@@ -59,10 +56,8 @@ impl AppDevice {
     }
 }
 
-const CONFIG_FILE: &str = "amdgpu-profile-switcher.ron";
-
 fn main() {
-    let config_path = config_path();
+    let config_path = util::config_path();
 
     {
         let main_opt = MainOpt::parse();
@@ -75,14 +70,14 @@ fn main() {
         }
 
         if main_opt.check_config {
-            let config = load_config(&config_path);
+            let config = util::load_config(&config_path);
             println!("config_path: {config_path:?}");
             println!("{config:#?}");
             return;
         }
     }
 
-    let config = load_config(&config_path);
+    let config = util::load_config(&config_path);
 
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
@@ -112,7 +107,7 @@ fn main() {
         let procs = ProcProgEntry::get_all_proc_prog_entries();
 
         for app in &app_devices {
-            let mut apply_config_entry: Option<&ParsedConfigEntry> = None;
+            let mut apply_config_entry: Option<&config::ParsedConfigEntry> = None;
 
             for e in &app.config_device.entries {
                 if procs.iter().any(|p| e.name == p.name) {
@@ -137,27 +132,4 @@ fn main() {
 
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
-}
-
-fn config_path() -> PathBuf {
-    use std::env;
-    use std::path::PathBuf;
-
-    env::var("APS_CONFIG_PATH").ok().map(|s| PathBuf::from(s)).unwrap_or_else(|| {
-        let config_home = env::var("XDG_CONFIG_HOME").unwrap_or("./".to_string());
-        PathBuf::from(config_home).join(CONFIG_FILE)
-    })
-}
-
-fn load_config(config_path: &Path) -> ParsedConfig {
-    let f = File::open(config_path).unwrap();
-
-    let pre_config: Config = match de::from_reader(f) {
-        Ok(v) => v,
-        Err(e) => {
-            println!("{e:?}");
-            panic!();
-        },
-    };
-    pre_config.parse()
 }
