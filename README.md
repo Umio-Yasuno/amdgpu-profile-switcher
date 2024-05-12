@@ -62,3 +62,6 @@ If you want to specify a config file, set the path to the file in `APS_CONFIG_PA
 
 ## Reference
  * <https://www.kernel.org/doc/html/latest/gpu/amdgpu/thermal.html#gpu-sysfs-power-state-interfaces>
+
+## TODO
+ *  hot reloading of the config file
