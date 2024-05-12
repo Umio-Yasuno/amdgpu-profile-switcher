@@ -7,14 +7,33 @@ use crate::config::{Config, ParsedConfig};
 
 const CONFIG_FILE_NAME: &str = "amdgpu-profile-switcher.ron";
 
-pub fn config_path() -> PathBuf {
+const SEARCH_CONFIG_DIRS: &[&str] = &[
+    "/etc/",
+    "/etc/xdg/",
+];
+
+pub fn config_path() -> Option<PathBuf> {
     use std::env;
     use std::path::PathBuf;
 
-    env::var("APS_CONFIG_PATH").ok().map(|s| PathBuf::from(s)).unwrap_or_else(|| {
-        let config_home = env::var("XDG_CONFIG_HOME").unwrap_or("./".to_string());
-        PathBuf::from(config_home).join(CONFIG_FILE_NAME)
-    })
+    if let Ok(s) = env::var("APS_CONFIG_PATH") {
+        return Some(PathBuf::from(s));
+    }
+
+    if let Ok(paths) = env::var("XDG_CONFIG_DIRS") {
+        for path in env::split_paths(&paths) {
+            let path = path.join(CONFIG_FILE_NAME);
+
+            if path.exists() {
+                return Some(path);
+            }
+        }
+    }
+
+    SEARCH_CONFIG_DIRS
+        .into_iter()
+        .map(|s| PathBuf::from(s).join(CONFIG_FILE_NAME))
+        .find(|path| path.exists())
 }
 
 pub fn load_config(config_path: &Path) -> ParsedConfig {

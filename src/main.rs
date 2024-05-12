@@ -57,7 +57,7 @@ impl AppDevice {
 }
 
 fn main() {
-    let config_path = util::config_path();
+    let config_path = util::config_path().expect("Config file is not found.");
 
     {
         let main_opt = MainOpt::parse();
