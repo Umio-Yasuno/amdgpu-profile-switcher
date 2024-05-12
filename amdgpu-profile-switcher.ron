@@ -32,9 +32,10 @@
                 ],
             */
             entries: [
+                (name: "glxgears", profile: Some("BOOTUP_DEFAULT")),
                 (name: "MonsterHunterWorld.exe", profile: Some("3D_FULL_SCREEN")),
                 (name: "mgsvtpp.exe", profile: Some("3D_FULL_SCREEN")),
-                // (name: "firefox-esr", profile: Some("3D_FULL_SCREEN")),
+                (name: "firefox-esr", perf_level: Some("auto")),
             ],
         )
     ],
@@ -45,9 +46,9 @@
         (
             pci: "0000:03:00.0",
             entries: [
+                (name: "glxgears", profile: Some("BOOTUP_DEFAULT")),
                 (name: "MonsterHunterWorld.exe", profile: Some("3D_FULL_SCREEN")),
                 (name: "mgsvtpp.exe", profile: Some("3D_FULL_SCREEN")),
-                (name: "firefox-esr", perf_level: Some("auto")),
             ],
         )
     ],

@@ -13,7 +13,7 @@ pub struct ParsedConfigPerDevice {
     pub entries: Vec<ParsedConfigEntry>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedConfigEntry {
     pub name: String,
     pub perf_level: Option<DpmForcedLevel>,

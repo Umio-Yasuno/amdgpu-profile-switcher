@@ -5,6 +5,7 @@ use proc_prog_name::ProcProgEntry;
 use log::debug;
 
 pub mod config;
+use config::{ParsedConfigPerDevice, ParsedConfigEntry};
 
 mod amdgpu_device;
 use amdgpu_device::AmdgpuDevice;
@@ -16,7 +17,8 @@ mod util;
 
 struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
-    pub config_device: config::ParsedConfigPerDevice,
+    pub config_device: ParsedConfigPerDevice,
+    pub cache_config_entry: Option<ParsedConfigEntry>,
 }
 
 impl AppDevice {
@@ -85,7 +87,7 @@ fn main() {
         panic!("No AMDGPU devices.");
     }
 
-    let app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
+    let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
         let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
             eprintln!("{} is not installed.", config_device.pci);
             return None;
@@ -93,7 +95,7 @@ fn main() {
         let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
         let config_device = config_device.clone();
 
-        Some(AppDevice { amdgpu_device, config_device })
+        Some(AppDevice { amdgpu_device, config_device, cache_config_entry: None })
     }).collect();
 
     if app_devices.is_empty() {
@@ -106,17 +108,24 @@ fn main() {
     loop {
         let procs = ProcProgEntry::get_all_proc_prog_entries();
 
-        for app in &app_devices {
-            let mut apply_config_entry: Option<&config::ParsedConfigEntry> = None;
+        'device: for app in app_devices.iter_mut() {
+            let mut apply_config_entry: Option<ParsedConfigEntry> = None;
 
             'detect: for e in &app.config_device.entries {
                 if procs.iter().any(|p| e.name == p.name) {
-                    apply_config_entry = Some(e);
+                    apply_config_entry = Some(e.clone());
                     break 'detect;
                 }
             }
 
-            if let Some(apply_config) = apply_config_entry {
+            if let [Some(detected), Some(cache_entry)] = [&apply_config_entry, &app.cache_config_entry] {
+                if detected.name == cache_entry.name {
+                    continue 'device;
+                }
+            }
+
+            if let Some(apply_config) = &apply_config_entry {
+                debug!("target process: {}", apply_config.name);
                 if let Some(perf_level) = apply_config.perf_level {
                     app.set_perf_level(perf_level);
                     debug!("Apply {perf_level:?} to {}", app.amdgpu_device.pci_bus);
@@ -125,9 +134,11 @@ fn main() {
                     app.set_power_profile(profile);
                     debug!("Apply {profile:?} to {}", app.amdgpu_device.pci_bus);
                 }
+                app.cache_config_entry = apply_config_entry;
             } else {
                 app.reset_perf_level();
                 app.reset_power_profile();
+                app.cache_config_entry = None;
             }
         }
 
