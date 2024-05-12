@@ -109,9 +109,10 @@ fn main() {
         for app in &app_devices {
             let mut apply_config_entry: Option<&config::ParsedConfigEntry> = None;
 
-            for e in &app.config_device.entries {
+            'detect: for e in &app.config_device.entries {
                 if procs.iter().any(|p| e.name == p.name) {
                     apply_config_entry = Some(e);
+                    break 'detect;
                 }
             }
 
