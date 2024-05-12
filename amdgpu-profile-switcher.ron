@@ -15,7 +15,6 @@
                     "profile_peak",
                     "profile_min_sclk",
                     "profile_min_mclk",
-                    "profile_exit",
                     "perf_determinism",
                 ],
                 profile: [

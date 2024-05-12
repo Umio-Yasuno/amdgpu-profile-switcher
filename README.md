@@ -35,7 +35,6 @@ If you want to specify a config file, set the path to the file in `APS_CONFIG_PA
                     "profile_peak",
                     "profile_min_sclk",
                     "profile_min_mclk",
-                    "profile_exit",
                     "perf_determinism",
                 ],
                 profile: [

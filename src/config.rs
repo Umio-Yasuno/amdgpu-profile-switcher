@@ -104,7 +104,7 @@ fn perf_level_from_str(s: &str) -> Option<DpmForcedLevel> {
         "profile_peak" => DpmForcedLevel::ProfilePeak,
         "profile_min_sclk" => DpmForcedLevel::ProfileMinSclk,
         "profile_min_mclk" => DpmForcedLevel::ProfileMinMclk,
-        "profile_exit" => DpmForcedLevel::ProfileExit,
+        // "profile_exit" => DpmForcedLevel::ProfileExit,
         "perf_determinism" => DpmForcedLevel::PerfDeterminism,
         _ => return None,
     };
