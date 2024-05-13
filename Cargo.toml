@@ -9,6 +9,6 @@ homepage = "https://github.com/Umio-Yasuno/amdgpu-profile-switcher"
 env_logger = "0.11.3"
 libdrm_amdgpu_sys = { git = "https://github.com/Umio-Yasuno/libdrm-amdgpu-sys-rs", default-features = false, features = ["std"] }
 log = "0.4.21"
-proc_prog_name = "0.1.0"
+proc_prog_name = { git = "https://github.com/Umio-Yasuno/proc_prog_name" }
 ron = "0.8.1"
 serde = { version = "1.0.201", features = ["derive"] }

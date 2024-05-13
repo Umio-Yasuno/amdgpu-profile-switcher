@@ -166,8 +166,7 @@ dependencies = [
 [[package]]
 name = "proc_prog_name"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce97bb6fcd0d05ca483d6f3b8b94d2db481c3a33c8fe544d816c62e4bf1113d2"
+source = "git+https://github.com/Umio-Yasuno/proc_prog_name#1ccb0400e642f068e512ec78f763f9b45b71dbd0"
 
 [[package]]
 name = "quote"

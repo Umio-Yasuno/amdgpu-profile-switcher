@@ -105,8 +105,10 @@ fn main() {
     env_logger::init();
     debug!("run loop");
 
+    let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(128);
+
     loop {
-        let procs = ProcProgEntry::get_all_proc_prog_entries();
+        ProcProgEntry::get_all_entries_with_buffer(&mut procs);
 
         'device: for app in app_devices.iter_mut() {
             let mut apply_config_entry: Option<ParsedConfigEntry> = None;
@@ -142,6 +144,7 @@ fn main() {
             }
         }
 
+        procs.clear();
         std::thread::sleep(std::time::Duration::from_secs(1));
     }
 }
