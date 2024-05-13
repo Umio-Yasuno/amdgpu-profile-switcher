@@ -13,7 +13,7 @@ use amdgpu_device::AmdgpuDevice;
 mod args;
 use args::MainOpt;
 
-mod util;
+mod utils;
 
 struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
@@ -56,10 +56,16 @@ impl AppDevice {
                 .unwrap_or_else(|e| panic!("IO Error: {e}"));
         }
     }
+
+    fn update_config(&mut self, config_devices: &[ParsedConfigPerDevice]) {
+        if let Some(config_device) = config_devices.iter().find(|config_dev| self.amdgpu_device.pci_bus == config_dev.pci) {
+            self.config_device.clone_from(&config_device);
+        }
+    }
 }
 
 fn main() {
-    let config_path = util::config_path().expect("Config file is not found.");
+    let config_path = utils::config_path().expect("Config file is not found.");
 
     {
         let main_opt = MainOpt::parse();
@@ -72,14 +78,14 @@ fn main() {
         }
 
         if main_opt.check_config {
-            let config = util::load_config(&config_path);
+            let config = utils::load_config(&config_path);
             println!("config_path: {config_path:?}");
             println!("{config:#?}");
             return;
         }
     }
 
-    let config = util::load_config(&config_path);
+    let config = utils::load_config(&config_path);
 
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
@@ -102,12 +108,27 @@ fn main() {
         panic!("No available AMDGPU devices.");
     }
 
+    let is_modified = utils::watch_config_file(&config_path);
+
     env_logger::init();
     debug!("run loop");
 
     let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(128);
 
+    use std::sync::atomic::Ordering;
+
     loop {
+        if is_modified.load(Ordering::Acquire) {
+            debug!("Reload config file");
+            let config = utils::load_config(&config_path);
+
+            for app in app_devices.iter_mut() {
+                app.update_config(&config.config_devices);
+            }
+
+            is_modified.store(false, Ordering::Release);
+        }
+
         ProcProgEntry::get_all_entries_with_buffer(&mut procs);
 
         'device: for app in app_devices.iter_mut() {
