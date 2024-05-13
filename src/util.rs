@@ -21,17 +21,17 @@ pub fn config_path() -> Option<PathBuf> {
     }
 
     if let Ok(paths) = env::var("XDG_CONFIG_DIRS") {
-        for path in env::split_paths(&paths) {
-            let path = path.join(CONFIG_FILE_NAME);
+        let path = env::split_paths(&paths)
+            .map(|p| p.join(CONFIG_FILE_NAME))
+            .find(|p| p.exists());
 
-            if path.exists() {
-                return Some(path);
-            }
+        if path.is_some() {
+            return path;
         }
     }
 
     SEARCH_CONFIG_DIRS
-        .into_iter()
+        .iter()
         .map(|s| PathBuf::from(s).join(CONFIG_FILE_NAME))
         .find(|path| path.exists())
 }
