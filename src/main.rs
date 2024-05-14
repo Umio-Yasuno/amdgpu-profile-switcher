@@ -158,7 +158,8 @@ fn main() {
                     debug!("Apply {profile:?} to {}", app.amdgpu_device.pci_bus);
                 }
                 app.cache_config_entry = apply_config_entry;
-            } else {
+            } else if app.cache_config_entry.is_some() {
+                debug!("reset perf_level and power_profile");
                 app.reset_perf_level();
                 app.reset_power_profile();
                 app.cache_config_entry = None;
