@@ -18,7 +18,7 @@ mod utils;
 struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
     pub config_device: ParsedConfigPerDevice,
-    pub cache_config_entry: Option<ParsedConfigEntry>,
+    pub cache_pid: Option<i32>,
 }
 
 impl AppDevice {
@@ -101,7 +101,7 @@ fn main() {
         let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
         let config_device = config_device.clone();
 
-        Some(AppDevice { amdgpu_device, config_device, cache_config_entry: None })
+        Some(AppDevice { amdgpu_device, config_device, cache_pid: None })
     }).collect();
 
     if app_devices.is_empty() {
@@ -133,18 +133,18 @@ fn main() {
 
         'device: for app in app_devices.iter_mut() {
             let mut apply_config_entry: Option<ParsedConfigEntry> = None;
+            let mut pid: Option<i32> = None;
 
             'detect: for e in &app.config_device.entries {
-                if procs.iter().any(|p| e.name == p.name) {
+                if let Some(proc) = procs.iter().find(|p| e.name == p.name) {
                     apply_config_entry = Some(e.clone());
+                    pid = Some(proc.pid);
                     break 'detect;
                 }
             }
 
-            if let [Some(detected), Some(cache_entry)] = [&apply_config_entry, &app.cache_config_entry] {
-                if detected.name == cache_entry.name {
-                    continue 'device;
-                }
+            if app.cache_pid.is_some() && pid == app.cache_pid {
+                continue 'device;
             }
 
             if let Some(apply_config) = &apply_config_entry {
@@ -157,12 +157,12 @@ fn main() {
                     app.set_power_profile(profile);
                     debug!("Apply {profile:?} to {}", app.amdgpu_device.pci_bus);
                 }
-                app.cache_config_entry = apply_config_entry;
-            } else if app.cache_config_entry.is_some() {
+                app.cache_pid = pid;
+            } else if app.cache_pid.is_some() {
                 debug!("reset perf_level and power_profile");
                 app.reset_perf_level();
                 app.reset_power_profile();
-                app.cache_config_entry = None;
+                app.cache_pid = None;
             }
         }
 
