@@ -70,6 +70,10 @@ pub fn watch_config_file(config_path: &Path) -> Arc<AtomicBool> {
                     pre_systime = systime;
                     arc_is_modified.store(true, Ordering::Release);
                 }
+            } else {
+                // Maybe the config file is deleted or moved.
+                // Handle the error on the main thread.
+                arc_is_modified.store(true, Ordering::Release);
             }
             
             std::thread::sleep(std::time::Duration::from_secs(1));
