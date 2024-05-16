@@ -31,9 +31,7 @@ impl MainOpt {
                     println!("{HELP_MSG}");
                     std::process::exit(0);
                 },
-                _ => {
-                    std::process::exit(1);
-                },
+                _ => panic!("Unknown Option: {arg:?}"),
             }
         }
 
