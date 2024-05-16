@@ -166,7 +166,7 @@ dependencies = [
 [[package]]
 name = "proc_prog_name"
 version = "0.1.0"
-source = "git+https://github.com/Umio-Yasuno/proc_prog_name#1ccb0400e642f068e512ec78f763f9b45b71dbd0"
+source = "git+https://github.com/Umio-Yasuno/proc_prog_name#8aa7a4c89bce67989de2cf99114bed5dfc23984b"
 
 [[package]]
 name = "quote"

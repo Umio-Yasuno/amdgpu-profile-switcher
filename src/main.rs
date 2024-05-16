@@ -129,7 +129,7 @@ fn main() {
             is_modified.store(false, Ordering::Release);
         }
 
-        ProcProgEntry::get_all_entries_with_buffer(&mut procs);
+        ProcProgEntry::update_entries(&mut procs);
 
         'device: for app in app_devices.iter_mut() {
             let mut apply_config_entry: Option<ParsedConfigEntry> = None;
