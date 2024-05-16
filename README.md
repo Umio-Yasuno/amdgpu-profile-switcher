@@ -18,7 +18,7 @@ FLAGS:
 If you want to specify a config file, set the path to the file in `APS_CONFIG_PATH`.  
 
 ## Config example
-```
+```rust
 (
     config_devices: [
         (
