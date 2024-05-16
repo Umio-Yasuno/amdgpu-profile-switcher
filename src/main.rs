@@ -50,8 +50,9 @@ fn main() {
 
     let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
         let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
+            let pci_devs: Vec<_> = pci_devs.iter().map(|pci| pci.to_string()).collect();
             eprintln!("{} is not installed.", config_device.pci);
-            eprintln!("AMDGPU list: {:#?}", pci_devs.iter().map(|pci| pci.to_string()).collect::<Vec<String>>());
+            eprintln!("AMDGPU list: {pci_devs:#?}");
             panic!();
         };
         let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;

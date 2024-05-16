@@ -1,4 +1,3 @@
-use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use ron::de;
@@ -65,7 +64,6 @@ const PROFILE_LIST: &[&str] = &[
 
 pub fn load_config(config_path: &Path) -> ParsedConfig {
     let s = std::fs::read_to_string(config_path).unwrap();
-    // let f = File::open(config_path).unwrap();
 
     let config: Config = match de::from_str(&s) {
         Ok(v) => v,
@@ -75,36 +73,29 @@ pub fn load_config(config_path: &Path) -> ParsedConfig {
     match config.parse() {
         Ok(v) => v,
         Err(e) => {
+            let mut lines = s.lines().enumerate();
             let mut line_number: Option<usize> = None;
 
             match e {
                 ParseConfigError::PciIsEmpty => {
-                    line_number = s
-                        .lines()
-                        .enumerate()
-                        .find(|(_i, l)| l.replace(" ", "").contains("pci:\"\""))
+                    line_number = lines
+                        .find(|(_i, l)| l.replace(' ', "").contains("pci:\"\""))
                         .map(|(i, _l)| i);
                 },
                 ParseConfigError::EntryNameIsEmpty => {
-                    line_number = s
-                        .lines()
-                        .enumerate()
-                        .find(|(_i, l)| l.replace(" ", "").contains("name:\"\""))
+                    line_number = lines
+                        .find(|(_i, l)| l.replace(' ', "").contains("name:\"\""))
                         .map(|(i, _l)| i);
                 },
                 ParseConfigError::InvalidPerfLevel(ref invalid_perf_level) => {
                     eprintln!("`perf_level` must be one of the following: {PERF_LEVEL_LIST:?}");
-                    line_number = s
-                        .lines()
-                        .enumerate()
+                    line_number = lines
                         .find(|(_i, l)| l.contains(invalid_perf_level))
                         .map(|(i, _l)| i);
                 },
                 ParseConfigError::InvalidProfile(ref invalid_profile) => {
                     eprintln!("`profile` must be one of the following: {PROFILE_LIST:?}");
-                    line_number = s
-                        .lines()
-                        .enumerate()
+                    line_number = lines
                         .find(|(_i, l)| l.contains(invalid_profile))
                         .map(|(i, _l)| i);
                 },
