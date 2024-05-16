@@ -13,6 +13,12 @@ pub struct ParsedConfigPerDevice {
     pub entries: Vec<ParsedConfigEntry>,
 }
 
+impl ParsedConfigPerDevice {
+    pub fn names(&self) -> Vec<String> {
+        self.entries.iter().map(|e| e.name.clone()).collect()
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ParsedConfigEntry {
     pub name: String,

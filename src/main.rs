@@ -1,3 +1,6 @@
+use std::fs;
+use std::sync::atomic::Ordering;
+
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
 
@@ -24,7 +27,7 @@ struct AppDevice {
 impl AppDevice {
     fn set_perf_level(&self, perf_level: DpmForcedLevel) {
         let perf_level = perf_level.to_arg();
-        std::fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level)
+        fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level)
             .unwrap_or_else(|e| panic!("IO Error: {e}"));
     }
 
@@ -35,7 +38,7 @@ impl AppDevice {
             DpmForcedLevel::Auto |
             DpmForcedLevel::Manual => {},
             _ => {
-                std::fs::write(&self.amdgpu_device.dpm_perf_level_path, DpmForcedLevel::Auto.to_arg())
+                fs::write(&self.amdgpu_device.dpm_perf_level_path, DpmForcedLevel::Auto.to_arg())
                     .unwrap_or_else(|e| panic!("IO Error: {e}"));
             },
         }
@@ -43,7 +46,7 @@ impl AppDevice {
 
     fn set_power_profile(&self, profile: PowerProfile) {
         let profile = (profile as u32).to_string();
-        std::fs::write(&self.amdgpu_device.power_profile_path, profile)
+        fs::write(&self.amdgpu_device.power_profile_path, profile)
             .unwrap_or_else(|e| panic!("IO Error: {e}"));
     }
 
@@ -52,7 +55,7 @@ impl AppDevice {
             .expect("Error: Failed to get current power profile.");
         if current_profile != PowerProfile::BOOTUP_DEFAULT {
             let profile = (PowerProfile::BOOTUP_DEFAULT as u32).to_string();
-            std::fs::write(&self.amdgpu_device.power_profile_path, profile)
+            fs::write(&self.amdgpu_device.power_profile_path, profile)
                 .unwrap_or_else(|e| panic!("IO Error: {e}"));
         }
     }
@@ -61,6 +64,10 @@ impl AppDevice {
         if let Some(config_device) = config_devices.iter().find(|config_dev| self.amdgpu_device.pci_bus == config_dev.pci) {
             self.config_device.clone_from(&config_device);
         }
+    }
+
+    fn name_list(&self) -> Vec<String> {
+        self.config_device.names()
     }
 }
 
@@ -114,22 +121,27 @@ fn main() {
     debug!("run loop");
 
     let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(128);
-
-    use std::sync::atomic::Ordering;
+    let mut name_list: Vec<String> = app_devices.iter().map(|app| app.name_list()).flatten().collect();
 
     loop {
         if is_modified.load(Ordering::Acquire) {
             debug!("Reload config file");
             let config = utils::load_config(&config_path);
 
+            name_list.clear();
+
             for app in app_devices.iter_mut() {
                 app.update_config(&config.config_devices);
+            }
+
+            for config_device in &config.config_devices {
+                name_list.extend(config_device.names());
             }
 
             is_modified.store(false, Ordering::Release);
         }
 
-        ProcProgEntry::update_entries(&mut procs);
+        ProcProgEntry::update_entries_with_name_filter(&mut procs, &name_list);
 
         'device: for app in app_devices.iter_mut() {
             let mut apply_config_entry: Option<ParsedConfigEntry> = None;
