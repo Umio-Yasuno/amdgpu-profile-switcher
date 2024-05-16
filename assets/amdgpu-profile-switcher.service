@@ -1,0 +1,11 @@
+[Unit]
+Description=AMDGPU Profile Switcher
+After=multi-user.target
+Requires=systemd-modules-load.service
+
+[Service]
+ExecStart=amdgpu-profile-switcher
+Environment=RUST_LOG=debug
+
+[Install]
+WantedBy=multi-user.target

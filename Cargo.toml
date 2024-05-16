@@ -12,3 +12,19 @@ log = "0.4.21"
 proc_prog_name = { git = "https://github.com/Umio-Yasuno/proc_prog_name" }
 ron = "0.8.1"
 serde = { version = "1.0.201", features = ["derive"] }
+
+[profile.release]
+opt-level = 2
+strip = true
+lto = true
+codegen-units = 1
+
+# cargo-deb
+[package.metadata.deb]
+depends = "libc6, libgcc-s1"
+section = "utils"
+assets = [
+    ["target/release/amdgpu-profile-switcher", "usr/bin/", "755"],
+    ["assets/amdgpu-profile-switcher.service", "usr/lib/systemd/system/", "644"]
+]
+
