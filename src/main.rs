@@ -1,14 +1,12 @@
-use std::fs;
 use std::sync::atomic::Ordering;
 
 use libdrm_amdgpu_sys::AMDGPU;
-use AMDGPU::{DpmForcedLevel, PowerProfile};
 
 use proc_prog_name::ProcProgEntry;
 use log::debug;
 
-pub mod config;
-use config::{ParsedConfigPerDevice, ParsedConfigEntry};
+mod config;
+use config::ParsedConfigEntry;
 
 mod amdgpu_device;
 use amdgpu_device::AmdgpuDevice;
@@ -18,58 +16,8 @@ use args::MainOpt;
 
 mod utils;
 
-struct AppDevice {
-    pub amdgpu_device: AmdgpuDevice,
-    pub config_device: ParsedConfigPerDevice,
-    pub cache_pid: Option<i32>,
-}
-
-impl AppDevice {
-    fn set_perf_level(&self, perf_level: DpmForcedLevel) {
-        let perf_level = perf_level.to_arg();
-        fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level)
-            .unwrap_or_else(|e| panic!("IO Error: {e}"));
-    }
-
-    fn reset_perf_level(&self) {
-        let current = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)
-            .expect("Error: Failed to get current dpm force performance level.");
-        match current {
-            DpmForcedLevel::Auto |
-            DpmForcedLevel::Manual => {},
-            _ => {
-                fs::write(&self.amdgpu_device.dpm_perf_level_path, DpmForcedLevel::Auto.to_arg())
-                    .unwrap_or_else(|e| panic!("IO Error: {e}"));
-            },
-        }
-    }
-
-    fn set_power_profile(&self, profile: PowerProfile) {
-        let profile = (profile as u32).to_string();
-        fs::write(&self.amdgpu_device.power_profile_path, profile)
-            .unwrap_or_else(|e| panic!("IO Error: {e}"));
-    }
-
-    fn reset_power_profile(&self) {
-        let current_profile = PowerProfile::get_current_profile_from_sysfs(&self.amdgpu_device.sysfs_path)
-            .expect("Error: Failed to get current power profile.");
-        if current_profile != PowerProfile::BOOTUP_DEFAULT {
-            let profile = (PowerProfile::BOOTUP_DEFAULT as u32).to_string();
-            fs::write(&self.amdgpu_device.power_profile_path, profile)
-                .unwrap_or_else(|e| panic!("IO Error: {e}"));
-        }
-    }
-
-    fn update_config(&mut self, config_devices: &[ParsedConfigPerDevice]) {
-        if let Some(config_device) = config_devices.iter().find(|config_dev| self.amdgpu_device.pci_bus == config_dev.pci) {
-            self.config_device.clone_from(&config_device);
-        }
-    }
-
-    fn name_list(&self) -> Vec<String> {
-        self.config_device.names()
-    }
-}
+mod app;
+use app::AppDevice;
 
 fn main() {
     let config_path = utils::config_path().expect("Config file is not found.");
@@ -103,6 +51,7 @@ fn main() {
     let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
         let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
             eprintln!("{} is not installed.", config_device.pci);
+            eprintln!("{pci_devs:#?}");
             return None;
         };
         let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
