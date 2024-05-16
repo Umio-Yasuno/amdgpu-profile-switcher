@@ -44,59 +44,77 @@ pub struct ConfigEntry {
     pub profile: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub enum ParseConfigError {
+    DevicesIsEmpty,
+    InvalidPci(String),
+    EntriesIsEmpty,
+    PciIsEmpty,
+    EntryNameIsEmpty,
+    InvalidPerfLevel(String),
+    InvalidProfile(String),
+}
+
 impl Config {
-    pub fn parse(&self) -> ParsedConfig {
+    pub fn parse(&self) -> Result<ParsedConfig, ParseConfigError> {
         if self.config_devices.is_empty() {
-            panic!("`config_devices` is empty.");
+            return Err(ParseConfigError::DevicesIsEmpty);
         }
 
-        let config_devices = self.config_devices.iter().map(|device| device.parse()).collect();
+        let config_devices: Result<Vec<_>, _> = self.config_devices
+            .iter()
+            .map(|device| device.parse())
+            .collect();
 
-        ParsedConfig { config_devices }
+        Ok(ParsedConfig { config_devices: config_devices? })
     }
 }
 
 impl ConfigPerDevice {
-    fn parse(&self) -> ParsedConfigPerDevice {
-        let pci: PCI::BUS_INFO = self.pci.parse().unwrap_or_else(|_| panic!("Parse Error: {:?}", self.pci));
-
-        if self.entries.is_empty() {
-            panic!("`entries` for {pci} is empty.");
+    fn parse(&self) -> Result<ParsedConfigPerDevice, ParseConfigError> {
+        if self.pci.is_empty() {
+            return Err(ParseConfigError::PciIsEmpty);
         }
 
-        let entries = self.entries.iter().map(|entry| entry.parse(&pci)).collect();
+        let pci: PCI::BUS_INFO = self.pci.parse().map_err(|_| ParseConfigError::InvalidPci(self.pci.to_string()))?;
 
-        ParsedConfigPerDevice { pci, entries }
+        if self.entries.is_empty() {
+            return Err(ParseConfigError::EntriesIsEmpty);
+        }
+
+        let entries: Result<Vec<ParsedConfigEntry>, ParseConfigError> = self.entries.iter().map(|entry| entry.parse()).collect();
+
+        Ok(ParsedConfigPerDevice { pci, entries: entries? })
     }
 }
 
 impl ConfigEntry {
-    fn parse(&self, pci: &PCI::BUS_INFO) -> ParsedConfigEntry {
+    fn parse(&self) -> Result<ParsedConfigEntry, ParseConfigError> {
         if self.name.is_empty() {
-            panic!("`name` for {pci} is empty.")
+            return Err(ParseConfigError::EntryNameIsEmpty);
         }
 
         let name = self.name.clone();
-        let perf_level = self.perf_level.as_ref().and_then(|s| {
-            let perf_level = perf_level_from_str(s);
-
-            if perf_level.is_none() {
-                panic!("`perf_level` for {pci} ({:?}) is invalid.", self);
+        let perf_level = if let Some(ref s) = self.perf_level {
+            if let Some(perf_level) = perf_level_from_str(s) {
+                Some(perf_level)
+            } else {
+                return Err(ParseConfigError::InvalidPerfLevel(s.to_string()));
             }
-
-            perf_level
-        });
-        let profile = self.profile.as_ref().and_then(|s| {
-            let profile = power_profile_from_str(s);
-
-            if profile.is_none() {
-                panic!("`profile` for {pci} ({:?}) is invalid.", self);
+        } else {
+            None
+        };
+        let profile = if let Some(ref s) = self.profile {
+            if let Some(profile) = power_profile_from_str(s) {
+                Some(profile)
+            } else {
+                return Err(ParseConfigError::InvalidProfile(s.to_string()));
             }
+        } else {
+            None
+        };
 
-            profile
-        });
-
-        ParsedConfigEntry { name, perf_level, profile }
+        Ok(ParsedConfigEntry { name, perf_level, profile })
     }
 }
 

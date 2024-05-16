@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use ron::de;
 
-use crate::config::{Config, ParsedConfig};
+use crate::config::{Config, ParsedConfig, ParseConfigError};
 
 const CONFIG_FILE_NAME: &str = "amdgpu-profile-switcher.ron";
 
@@ -36,17 +36,88 @@ pub fn config_path() -> Option<PathBuf> {
         .find(|path| path.exists())
 }
 
-pub fn load_config(config_path: &Path) -> ParsedConfig {
-    let f = File::open(config_path).unwrap();
+const PERF_LEVEL_LIST: &[&str] = &[
+    "auto",
+    "low",
+    "high",
+    "manual",
+    "profile_standard",
+    "profile_peak",
+    "profile_min_sclk",
+    "profile_min_mclk",
+    "perf_determinism",
+];
 
-    let pre_config: Config = match de::from_reader(f) {
+
+const PROFILE_LIST: &[&str] = &[
+    "BOOTUP_DEFAULT",
+    "3D_FULL_SCREEN",
+    "POWER_SAVING",
+    "VIDEO",
+    "VR",
+    "COMPUTE",
+    "CUSTOM",
+    "WINDOW_3D",
+    "CAPPED",
+    "UNCAPPED",
+];
+
+
+pub fn load_config(config_path: &Path) -> ParsedConfig {
+    let s = std::fs::read_to_string(config_path).unwrap();
+    // let f = File::open(config_path).unwrap();
+
+    let config: Config = match de::from_str(&s) {
+        Ok(v) => v,
+        Err(e) => panic!("{e:?}"),
+    };
+
+    match config.parse() {
         Ok(v) => v,
         Err(e) => {
-            println!("{e:?}");
-            panic!();
+            let mut line_number: Option<usize> = None;
+
+            match e {
+                ParseConfigError::PciIsEmpty => {
+                    line_number = s
+                        .lines()
+                        .enumerate()
+                        .find(|(_i, l)| l.replace(" ", "").contains("pci:\"\""))
+                        .map(|(i, _l)| i);
+                },
+                ParseConfigError::EntryNameIsEmpty => {
+                    line_number = s
+                        .lines()
+                        .enumerate()
+                        .find(|(_i, l)| l.replace(" ", "").contains("name:\"\""))
+                        .map(|(i, _l)| i);
+                },
+                ParseConfigError::InvalidPerfLevel(ref invalid_perf_level) => {
+                    eprintln!("`perf_level` must be one of the following: {PERF_LEVEL_LIST:?}");
+                    line_number = s
+                        .lines()
+                        .enumerate()
+                        .find(|(_i, l)| l.contains(invalid_perf_level))
+                        .map(|(i, _l)| i);
+                },
+                ParseConfigError::InvalidProfile(ref invalid_profile) => {
+                    eprintln!("`profile` must be one of the following: {PROFILE_LIST:?}");
+                    line_number = s
+                        .lines()
+                        .enumerate()
+                        .find(|(_i, l)| l.contains(invalid_profile))
+                        .map(|(i, _l)| i);
+                },
+                _ => {},
+            }
+
+            if let Some(line_number) = line_number {
+                panic!("Parse Error: {e:?}, Line {}", line_number+1);
+            } else {
+                panic!("Parse Error: {e:?}");
+            }
         },
-    };
-    pre_config.parse()
+    }
 }
 
 use std::sync::Arc;
