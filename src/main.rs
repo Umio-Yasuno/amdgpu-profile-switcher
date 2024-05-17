@@ -19,6 +19,15 @@ mod utils;
 mod app;
 use app::AppDevice;
 
+macro_rules! pci_list {
+    ($pci_devs:expr, $config_device_pci:expr) => {
+        let pci_devs: Vec<_> = $pci_devs.iter().map(|pci| pci.to_string()).collect();
+        eprintln!("{} is not installed or is not AMDGPU device.", $config_device_pci);
+        eprintln!("AMDGPU list: {pci_devs:#?}");
+        panic!();
+    };
+}
+
 fn main() {
     let config_path = utils::config_path().expect("Config file is not found.");
 
@@ -50,10 +59,7 @@ fn main() {
 
     let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
         let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
-            let pci_devs: Vec<_> = pci_devs.iter().map(|pci| pci.to_string()).collect();
-            eprintln!("{} is not installed or is not AMDGPU device.", config_device.pci);
-            eprintln!("AMDGPU list: {pci_devs:#?}");
-            panic!();
+            pci_list!(pci_devs, config_device.pci);
         };
         let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
         let config_device = config_device.clone();
@@ -87,10 +93,7 @@ fn main() {
                 {
                     app.config_device.clone_from(config_device);
                 } else {
-                    let pci_devs: Vec<_> = pci_devs.iter().map(|pci| pci.to_string()).collect();
-                    eprintln!("{} is not installed or is not AMDGPU device.", config_device.pci);
-                    eprintln!("AMDGPU list: {pci_devs:#?}");
-                    panic!();
+                    pci_list!(pci_devs, config_device.pci);
                 }
 
                 name_list.extend(config_device.names());
