@@ -26,8 +26,11 @@ codegen-units = 1
 [package.metadata.deb]
 depends = "libc6, libgcc-s1"
 section = "utils"
+extended-description = """\
+`amdgpu-profile-switcher` is a simple tool that automatically switches profiles for AMDGPU.  
+The tool switches between perf level (`power_dpm_force_performance_level`) and power_profile (`pp_power_profile_mode`) depending on the process program name. (requires root privileges)"""
 assets = [
     ["target/release/amdgpu-profile-switcher", "usr/bin/", "755"],
-    ["assets/amdgpu-profile-switcher.service", "usr/lib/systemd/system/", "644"]
 ]
-
+maintainer-scripts = "debian/"
+systemd-units = { enable = false }

@@ -17,6 +17,21 @@ FLAGS:
 
 If you want to specify a config file, set the path to the file in `APS_CONFIG_PATH`.  
 
+## Installation
+### Debian
+```
+$ git clone https://github.com/Umio-Yasuno/amdgpu-profile-switcher
+$ cd amdgpu-profile-switcher
+$ cargo deb
+$ sudo dpkg -i ./target/debian/amdgpu-profile-switcher.*deb
+```
+
+### systemd
+```
+sudo systemctl enable amdgpu-profile-switcher
+sudo systemctl start amdgpu-profile-switcher
+```
+
 ## Config example
 ```rust
 (
