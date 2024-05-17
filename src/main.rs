@@ -49,7 +49,7 @@ fn main() {
             },
             AppMode::GenerateConfig => {
                 let raw_config = utils::generate_config().unwrap();
-                println!("{raw_config}");
+                println!("{}{raw_config}", utils::COMMENT);
                 return;
             },
             _ => {},

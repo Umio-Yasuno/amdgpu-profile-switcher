@@ -145,6 +145,34 @@ pub fn watch_config_file(config_path: &Path) -> Arc<AtomicBool> {
     is_modified
 }
 
+pub const COMMENT: &str = r#"// Config entries that are earlier take priority.
+/*
+    perf_level: [
+        "auto",
+        "low",
+        "high",
+        "manual",
+        "profile_standard",
+        "profile_peak",
+        "profile_min_sclk",
+        "profile_min_mclk",
+        "perf_determinism",
+    ],
+    profile: [
+        "BOOTUP_DEFAULT",
+        "3D_FULL_SCREEN",
+        "POWER_SAVING",
+        "VIDEO",
+        "VR",
+        "COMPUTE",
+        "CUSTOM",
+        "WINDOW_3D",
+        "CAPPED",
+        "UNCAPPED",
+    ],
+*/
+"#;
+
 pub fn generate_config() -> ron::Result<String> {
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
