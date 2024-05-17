@@ -6,10 +6,17 @@ const HELP_MSG: &str = concat!(
     "    # <", env!("CARGO_PKG_NAME"), "> [options ..]\n",
     "\n",
     "FLAGS:\n",
-    "   --procs\n",
-    "       Dump current all process names.\n",
-    "   --help\n",
-    "       Print help information.\n",
+    "    --procs\n",
+    "        Dump current all process names.\n",
+    "    --check-config\n",
+    "        Check the config file.\n",
+    "    --generate-config\n",
+    "        Output the config file to stdout.\n",
+    "    --help\n",
+    "        Print help information.\n",
+    "ENV:\n",
+    "    APS_CONFIG_PATH\n",
+    "        Specify the config file path.\n",
 );
 
 #[derive(Default)]

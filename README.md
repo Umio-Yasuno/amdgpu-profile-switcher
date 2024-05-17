@@ -11,6 +11,10 @@ The tool switches between perf level (`power_dpm_force_performance_level`) and p
 FLAGS:
    --procs
        Dump current all process names.
+   --check-config
+       Check config file.
+   --generate-config
+       Output config file to stdout.
    --help
        Print help information.
 ```
