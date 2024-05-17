@@ -48,7 +48,6 @@ pub struct ConfigEntry {
 pub enum ParseConfigError {
     DevicesIsEmpty,
     InvalidPci(String),
-    EntriesIsEmpty,
     PciIsEmpty,
     EntryNameIsEmpty,
     InvalidPerfLevel(String),
@@ -79,7 +78,7 @@ impl ConfigPerDevice {
         let pci: PCI::BUS_INFO = self.pci.parse().map_err(|_| ParseConfigError::InvalidPci(self.pci.to_string()))?;
 
         if self.entries.is_empty() {
-            return Err(ParseConfigError::EntriesIsEmpty);
+            eprintln!("`entries` for {pci} is empty.");
         }
 
         let entries: Result<Vec<ParsedConfigEntry>, ParseConfigError> = self.entries.iter().map(|entry| entry.parse()).collect();

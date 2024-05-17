@@ -105,6 +105,10 @@ fn main() {
         ProcProgEntry::update_entries_with_name_filter(&mut procs, &name_list);
 
         'device: for app in app_devices.iter_mut() {
+            if app.config_device.entries.is_empty() {
+                continue 'device;
+            }
+
             let mut apply_config_entry: Option<ParsedConfigEntry> = None;
             let mut pid: Option<i32> = None;
 
