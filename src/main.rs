@@ -51,7 +51,7 @@ fn main() {
     let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
         let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
             let pci_devs: Vec<_> = pci_devs.iter().map(|pci| pci.to_string()).collect();
-            eprintln!("{} is not installed.", config_device.pci);
+            eprintln!("{} is not installed or is not AMDGPU device.", config_device.pci);
             eprintln!("AMDGPU list: {pci_devs:#?}");
             panic!();
         };
@@ -80,11 +80,19 @@ fn main() {
 
             name_list.clear();
 
-            for app in app_devices.iter_mut() {
-                app.update_config(&config.config_devices);
-            }
-
             for config_device in &config.config_devices {
+                if let Some(ref mut app) = app_devices
+                    .iter_mut()
+                    .find(|app| app.amdgpu_device.pci_bus == config_device.pci)
+                {
+                    app.config_device.clone_from(config_device);
+                } else {
+                    let pci_devs: Vec<_> = pci_devs.iter().map(|pci| pci.to_string()).collect();
+                    eprintln!("{} is not installed or is not AMDGPU device.", config_device.pci);
+                    eprintln!("AMDGPU list: {pci_devs:#?}");
+                    panic!();
+                }
+
                 name_list.extend(config_device.names());
             }
 

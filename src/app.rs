@@ -48,12 +48,6 @@ impl AppDevice {
         }
     }
 
-    pub fn update_config(&mut self, config_devices: &[ParsedConfigPerDevice]) {
-        if let Some(config_device) = config_devices.iter().find(|config_dev| self.amdgpu_device.pci_bus == config_dev.pci) {
-            self.config_device.clone_from(&config_device);
-        }
-    }
-
     pub fn name_list(&self) -> Vec<String> {
         self.config_device.names()
     }
