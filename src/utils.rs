@@ -1,8 +1,12 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::fs;
 
-use ron::de;
+use ron::{de, ser};
 
-use crate::config::{Config, ParsedConfig, ParseConfigError};
+use crate::AMDGPU;
+use crate::config::{Config, ConfigPerDevice, ConfigEntry, ParsedConfig, ParseConfigError};
 
 const CONFIG_FILE_NAME: &str = "amdgpu-profile-switcher.ron";
 
@@ -111,10 +115,6 @@ pub fn load_config(config_path: &Path) -> ParsedConfig {
     }
 }
 
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::fs;
-
 pub fn watch_config_file(config_path: &Path) -> Arc<AtomicBool> {
     let config_path = config_path.to_path_buf();
     let is_modified = Arc::new(AtomicBool::new(false));
@@ -143,4 +143,25 @@ pub fn watch_config_file(config_path: &Path) -> Arc<AtomicBool> {
     });
 
     is_modified
+}
+
+pub fn generate_config() -> ron::Result<String> {
+    let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
+
+    if pci_devs.is_empty() {
+        panic!("No AMDGPU devices.");
+    }
+
+    let entry = ConfigEntry {
+        name: "glxgears".to_string(),
+        perf_level: None,
+        profile: Some("BOOTUP_DEFAULT".to_string()),
+    };
+    let config_devices: Vec<_> = pci_devs
+        .iter()
+        .map(|pci| ConfigPerDevice { pci: pci.to_string(), entries: vec![entry.clone()] })
+        .collect();
+    let config = Config { config_devices };
+
+    ser::to_string_pretty(&config, Default::default())
 }

@@ -13,9 +13,17 @@ const HELP_MSG: &str = concat!(
 );
 
 #[derive(Default)]
+pub enum AppMode {
+    #[default]
+    Run,
+    DumpProcs,
+    CheckConfig,
+    GenerateConfig,
+}
+
+#[derive(Default)]
 pub struct MainOpt {
-    pub dump_procs: bool,
-    pub check_config: bool,
+    pub app_mode: AppMode,
 }
 
 impl MainOpt {
@@ -25,8 +33,9 @@ impl MainOpt {
 
         for arg in args {
             match arg.as_str() {
-                "--procs" => opt.dump_procs = true,
-                "--check-config" => opt.check_config = true,
+                "--procs" => opt.app_mode = AppMode::DumpProcs,
+                "--check-config" => opt.app_mode = AppMode::CheckConfig,
+                "--generate-config" => opt.app_mode = AppMode::GenerateConfig,
                 "--help" => {
                     println!("{HELP_MSG}");
                     std::process::exit(0);

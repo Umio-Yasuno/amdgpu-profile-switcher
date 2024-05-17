@@ -12,7 +12,7 @@ mod amdgpu_device;
 use amdgpu_device::AmdgpuDevice;
 
 mod args;
-use args::MainOpt;
+use args::{AppMode, MainOpt};
 
 mod utils;
 
@@ -34,18 +34,25 @@ fn main() {
     {
         let main_opt = MainOpt::parse();
 
-        if main_opt.dump_procs {
-            let procs = ProcProgEntry::get_all_proc_prog_entries();
-            let procs: Vec<_> = procs.iter().map(|p| p.name.clone()).collect();
-            println!("{procs:#?}");
-            return;
-        }
-
-        if main_opt.check_config {
-            let config = utils::load_config(&config_path);
-            println!("config_path: {config_path:?}");
-            println!("{config:#?}");
-            return;
+        match main_opt.app_mode {
+            AppMode::DumpProcs => {
+                let procs = ProcProgEntry::get_all_proc_prog_entries();
+                let procs: Vec<_> = procs.iter().map(|p| p.name.clone()).collect();
+                println!("{procs:#?}");
+                return;
+            },
+            AppMode::CheckConfig => {
+                let config = utils::load_config(&config_path);
+                println!("config_path: {config_path:?}");
+                println!("{config:#?}");
+                return;
+            },
+            AppMode::GenerateConfig => {
+                let raw_config = utils::generate_config().unwrap();
+                println!("{raw_config}");
+                return;
+            },
+            _ => {},
         }
     }
 
