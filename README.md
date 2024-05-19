@@ -28,6 +28,7 @@ $ git clone https://github.com/Umio-Yasuno/amdgpu-profile-switcher
 $ cd amdgpu-profile-switcher
 $ cargo deb
 $ sudo dpkg -i ./target/debian/amdgpu-profile-switcher.*deb
+$ amdgpu-profile-switcher --generate-config | sudo tee /etc/xdg/amdgpu-profile-switcher.ron
 ```
 
 ### systemd
