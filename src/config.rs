@@ -10,6 +10,7 @@ pub struct ParsedConfig {
 #[derive(Debug, Clone)]
 pub struct ParsedConfigPerDevice {
     pub pci: PCI::BUS_INFO,
+    pub default_profile: PowerProfile,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -34,6 +35,7 @@ pub struct Config {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigPerDevice {
     pub pci: String,
+    pub default_profile: Option<String>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -81,9 +83,18 @@ impl ConfigPerDevice {
             eprintln!("`entries` for {pci} is empty.");
         }
 
+        let default_profile = if let Some(ref s) = self.default_profile {
+            if let Some(profile) = power_profile_from_str(s) {
+                profile
+            } else {
+                return Err(ParseConfigError::InvalidProfile(s.to_string()));
+            }
+        } else {
+            PowerProfile::BOOTUP_DEFAULT
+        };
         let entries: Result<Vec<ParsedConfigEntry>, ParseConfigError> = self.entries.iter().map(|entry| entry.parse()).collect();
 
-        Ok(ParsedConfigPerDevice { pci, entries: entries? })
+        Ok(ParsedConfigPerDevice { pci, default_profile, entries: entries? })
     }
 }
 

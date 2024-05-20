@@ -38,11 +38,12 @@ impl AppDevice {
             .unwrap_or_else(|e| panic!("IO Error: {e}"));
     }
 
-    pub fn reset_power_profile(&self) {
+    pub fn set_default_power_profile(&self) {
+        let profile = self.config_device.default_profile;
         let current_profile = PowerProfile::get_current_profile_from_sysfs(&self.amdgpu_device.sysfs_path)
             .expect("Error: Failed to get current power profile.");
-        if current_profile != PowerProfile::BOOTUP_DEFAULT {
-            let profile = (PowerProfile::BOOTUP_DEFAULT as u32).to_string();
+        if current_profile != profile {
+            let profile = (profile as u32).to_string();
             fs::write(&self.amdgpu_device.power_profile_path, profile)
                 .unwrap_or_else(|e| panic!("IO Error: {e}"));
         }

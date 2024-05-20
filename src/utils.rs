@@ -187,7 +187,7 @@ pub fn generate_config() -> ron::Result<String> {
     };
     let config_devices: Vec<_> = pci_devs
         .iter()
-        .map(|pci| ConfigPerDevice { pci: pci.to_string(), entries: vec![entry.clone()] })
+        .map(|pci| ConfigPerDevice { pci: pci.to_string(), default_profile: None, entries: vec![entry.clone()] })
         .collect();
     let config = Config { config_devices };
 

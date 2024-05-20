@@ -145,7 +145,7 @@ fn main() {
             } else if app.cache_pid.is_some() {
                 debug!("reset perf_level and power_profile");
                 app.reset_perf_level();
-                app.reset_power_profile();
+                app.set_default_power_profile();
                 app.cache_pid = None;
             }
         }
