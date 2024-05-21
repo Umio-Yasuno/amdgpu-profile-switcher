@@ -39,42 +39,40 @@ sudo systemctl start amdgpu-profile-switcher
 
 ## Config example
 ```rust
+// Config entries that are earlier take priority.
+/*
+    perf_level: [
+        "auto",
+        "low",
+        "high",
+        "manual",
+        "profile_standard",
+        "profile_peak",
+        "profile_min_sclk",
+        "profile_min_mclk",
+        "perf_determinism",
+    ],
+    profile: [
+        "BOOTUP_DEFAULT",
+        "3D_FULL_SCREEN",
+        "POWER_SAVING",
+        "VIDEO",
+        "VR",
+        "COMPUTE",
+        "CUSTOM",
+        "WINDOW_3D",
+        "CAPPED",
+        "UNCAPPED",
+    ],
+*/
 (
     config_devices: [
         (
-            // AMDGPU device list can be get using `amdgpu_top --list` or `ls /sys/bus/pci/drivers/amdgpu/`
             pci: "0000:03:00.0",
-            // Config entries that are earlier take priority.
-            /*
-                perf_level: [
-                    "auto",
-                    "low",
-                    "high",
-                    "manual",
-                    "profile_standard",
-                    "profile_peak",
-                    "profile_min_sclk",
-                    "profile_min_mclk",
-                    "perf_determinism",
-                ],
-                profile: [
-                    "BOOTUP_DEFAULT",
-                    "3D_FULL_SCREEN",
-                    "POWER_SAVING",
-                    "VIDEO",
-                    "VR",
-                    "COMPUTE",
-                    "CUSTOM",
-                    "WINDOW_3D",
-                    "CAPPED",
-                    "UNCAPPED",
-                ],
-            */
             entries: [
-                (name: "MonsterHunterWorld.exe", perf_level: Some("profile_standard")),
-                (name: "mgsvtpp.exe", profile: Some("3D_FULL_SCREEN")),
+                (name: "glxgears", profile: Some("BOOTUP_DEFAULT")),
             ],
-        )
+        ),
     ],
 )
 ```
