@@ -78,7 +78,12 @@ fn main() {
         panic!("No available AMDGPU devices.");
     }
 
-    let is_modified = utils::watch_config_file(&config_path);
+    for app in &app_devices {
+        debug!("set default power profile ({})", app.config_device.default_profile);
+        app.set_default_power_profile();
+    }
+
+    let modified = utils::watch_config_file(&config_path);
 
     env_logger::init();
     debug!("run loop");
@@ -87,7 +92,7 @@ fn main() {
     let mut name_list: Vec<String> = app_devices.iter().map(|app| app.name_list()).flatten().collect();
 
     loop {
-        if is_modified.load(Ordering::Acquire) {
+        if modified.load(Ordering::Acquire) {
             debug!("Reload config file");
             let config = utils::load_config(&config_path);
 
@@ -106,7 +111,7 @@ fn main() {
                 name_list.extend(config_device.names());
             }
 
-            is_modified.store(false, Ordering::Release);
+            modified.store(false, Ordering::Release);
         }
 
         ProcProgEntry::update_entries_with_name_filter(&mut procs, &name_list);
