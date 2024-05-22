@@ -20,6 +20,7 @@ FLAGS:
 ```
 
 If you want to specify a config file, set the path to the file in `APS_CONFIG_PATH`.  
+The default config file paths are `/etc/amdgpu-profile-switcher.ron` or `/etc/xdg/amdgpu-profile-switcher.ron` or under `XDG_CONFIG_DIRS`.  
 
 ## Installation
 ### Debian
