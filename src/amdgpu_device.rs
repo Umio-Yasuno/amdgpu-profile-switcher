@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::fs;
 
 use libdrm_amdgpu_sys::PCI;
+use libdrm_amdgpu_sys::AMDGPU::PowerProfile;
 
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
@@ -34,5 +35,9 @@ impl AmdgpuDevice {
             .any(|path| {
                 fs::OpenOptions::new().read(true).write(true).open(path).is_ok()
             })
+    }
+
+    pub fn get_all_supported_power_profile(&self) -> Vec<PowerProfile> {
+        PowerProfile::get_all_supported_profiles_from_sysfs(&self.sysfs_path)
     }
 }
