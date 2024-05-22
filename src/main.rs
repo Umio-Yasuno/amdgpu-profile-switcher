@@ -79,6 +79,10 @@ fn main() {
     }
 
     for app in &app_devices {
+        debug!("check permissions");
+        if !app.amdgpu_device.check_permissions() {
+            panic!("Error: PermissionDenied for sysfs");
+        }
         debug!("set default power profile ({})", app.config_device.default_profile);
         app.set_default_perf_level();
         app.set_default_power_profile();

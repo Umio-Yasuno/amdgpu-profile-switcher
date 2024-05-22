@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::fs;
 
 use libdrm_amdgpu_sys::PCI;
 
@@ -25,5 +26,13 @@ impl AmdgpuDevice {
             power_profile_path,
             dpm_perf_level_path,
         })
+    }
+
+    pub fn check_permissions(&self) -> bool {
+        [&self.power_profile_path, &self.dpm_perf_level_path]
+            .iter()
+            .any(|path| {
+                fs::OpenOptions::new().read(true).write(true).open(path).is_ok()
+            })
     }
 }
