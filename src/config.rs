@@ -74,6 +74,34 @@ impl Config {
 }
 
 impl ConfigPerDevice {
+    fn parse_default_perf_level(&self) -> Result<DpmForcedLevel, ParseConfigError> {
+        let default_perf_level = if let Some(ref s) = self.default_perf_level {
+            if let Some(perf_level) = perf_level_from_str(s) {
+                perf_level
+            } else {
+                return Err(ParseConfigError::InvalidPerfLevel(s.to_string()));
+            }
+        } else {
+            DpmForcedLevel::Auto
+        };
+
+        Ok(default_perf_level)
+    }
+
+    fn parse_default_power_profile(&self) -> Result<PowerProfile, ParseConfigError> {
+        let default_profile = if let Some(ref s) = self.default_profile {
+            if let Some(profile) = power_profile_from_str(s) {
+                profile
+            } else {
+                return Err(ParseConfigError::InvalidProfile(s.to_string()));
+            }
+        } else {
+            PowerProfile::BOOTUP_DEFAULT
+        };
+
+        Ok(default_profile)
+    }
+
     fn parse(&self) -> Result<ParsedConfigPerDevice, ParseConfigError> {
         if self.pci.is_empty() {
             return Err(ParseConfigError::PciIsEmpty);
@@ -85,24 +113,8 @@ impl ConfigPerDevice {
             eprintln!("`entries` for {pci} is empty.");
         }
 
-        let default_perf_level = if let Some(ref s) = self.default_perf_level {
-            if let Some(perf_level) = perf_level_from_str(s) {
-                perf_level
-            } else {
-                return Err(ParseConfigError::InvalidPerfLevel(s.to_string()));
-            }
-        } else {
-            DpmForcedLevel::Auto
-        };
-        let default_profile = if let Some(ref s) = self.default_profile {
-            if let Some(profile) = power_profile_from_str(s) {
-                profile
-            } else {
-                return Err(ParseConfigError::InvalidProfile(s.to_string()));
-            }
-        } else {
-            PowerProfile::BOOTUP_DEFAULT
-        };
+        let default_perf_level = self.parse_default_perf_level()?;
+        let default_profile = self.parse_default_power_profile()?;
         let entries: Result<Vec<ParsedConfigEntry>, ParseConfigError> = self.entries.iter().map(|entry| entry.parse()).collect();
 
         Ok(ParsedConfigPerDevice { pci, default_perf_level, default_profile, entries: entries? })
@@ -110,12 +122,7 @@ impl ConfigPerDevice {
 }
 
 impl ConfigEntry {
-    fn parse(&self) -> Result<ParsedConfigEntry, ParseConfigError> {
-        if self.name.is_empty() {
-            return Err(ParseConfigError::EntryNameIsEmpty);
-        }
-
-        let name = self.name.clone();
+    fn parse_perf_level(&self) -> Result<Option<DpmForcedLevel>, ParseConfigError> {
         let perf_level = if let Some(ref s) = self.perf_level {
             if let Some(perf_level) = perf_level_from_str(s) {
                 Some(perf_level)
@@ -125,6 +132,11 @@ impl ConfigEntry {
         } else {
             None
         };
+
+        Ok(perf_level)
+    }
+
+    fn parse_power_profile(&self) -> Result<Option<PowerProfile>, ParseConfigError> {
         let profile = if let Some(ref s) = self.profile {
             if let Some(profile) = power_profile_from_str(s) {
                 Some(profile)
@@ -134,6 +146,18 @@ impl ConfigEntry {
         } else {
             None
         };
+
+        Ok(profile)
+    }
+
+    fn parse(&self) -> Result<ParsedConfigEntry, ParseConfigError> {
+        if self.name.is_empty() {
+            return Err(ParseConfigError::EntryNameIsEmpty);
+        }
+
+        let name = self.name.clone();
+        let perf_level = self.parse_perf_level()?;
+        let profile = self.parse_power_profile()?;
 
         Ok(ParsedConfigEntry { name, perf_level, profile })
     }
