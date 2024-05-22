@@ -9,7 +9,7 @@ authors = ["Umio Yasuno <coelacanth_dream@protonmail.com>"]
 repository = "https://github.com/Umio-Yasuno/amdgpu-profile-switcher"
 
 [dependencies]
-env_logger = "0.11.3"
+env_logger = { version = "0.11.3", default-features = false }
 libdrm_amdgpu_sys = { git = "https://github.com/Umio-Yasuno/libdrm-amdgpu-sys-rs", default-features = false, features = ["std"] }
 log = "0.4.21"
 proc_prog_name = { git = "https://github.com/Umio-Yasuno/proc_prog_name" }
