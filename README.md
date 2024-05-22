@@ -72,8 +72,14 @@ sudo systemctl start amdgpu-profile-switcher
     config_devices: [
         (
             pci: "0000:03:00.0",
+            default_perf_level: Some("auto"),
+            default_profile: Some("BOOTUP_DEFAULT"),
             entries: [
-                (name: "glxgears", profile: Some("BOOTUP_DEFAULT")),
+                (
+                    name: "glxgears",
+                    perf_level: None,
+                    profile: Some("BOOTUP_DEFAULT"),
+                ),
             ],
         ),
     ],
