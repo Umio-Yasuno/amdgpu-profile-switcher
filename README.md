@@ -25,6 +25,16 @@ If you want to specify a config file, set the path to the file in `APS_CONFIG_PA
 The default config file paths are `/etc/amdgpu-profile-switcher.ron` or `/etc/xdg/amdgpu-profile-switcher.ron` or under `XDG_CONFIG_DIRS`.  
 
 ## Installation
+### Manually
+```
+$ git clone https://github.com/Umio-Yasuno/amdgpu-profile-switcher
+$ cd amdgpu-profile-switcher
+$ cargo build --release
+$ sudo cp ./target/release/amdgpu-profile-switcher /usr/bin/
+$ sudo cp ./debian/amdgpu-profile-switcher.service /etc/systemd/system/
+$ amdgpu-profile-switcher --generate-config | sudo tee /etc/xdg/amdgpu-profile-switcher.ron
+```
+
 ### Debian/Ubuntu (.deb)
 ```
 $ git clone https://github.com/Umio-Yasuno/amdgpu-profile-switcher
@@ -40,7 +50,7 @@ $ cargo build --release
 $ cargo generate-rpm
 ```
 
-### systemd
+#### systemd
 ```
 sudo systemctl enable amdgpu-profile-switcher
 sudo systemctl start amdgpu-profile-switcher
