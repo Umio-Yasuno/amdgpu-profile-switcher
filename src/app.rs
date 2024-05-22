@@ -19,16 +19,14 @@ impl AppDevice {
             .unwrap_or_else(|e| panic!("IO Error: {e}"));
     }
 
-    pub fn reset_perf_level(&self) {
-        let current = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)
+    pub fn set_default_perf_level(&self) {
+        let perf_level = self.config_device.default_perf_level;
+        let current_perf_level = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)
             .expect("Error: Failed to get current dpm force performance level.");
-        match current {
-            DpmForcedLevel::Auto |
-            DpmForcedLevel::Manual => {},
-            _ => {
-                fs::write(&self.amdgpu_device.dpm_perf_level_path, DpmForcedLevel::Auto.to_arg())
-                    .unwrap_or_else(|e| panic!("IO Error: {e}"));
-            },
+
+        if current_perf_level != perf_level {
+            fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level.to_arg())
+                .unwrap_or_else(|e| panic!("IO Error: {e}"));
         }
     }
 
@@ -42,6 +40,7 @@ impl AppDevice {
         let profile = self.config_device.default_profile;
         let current_profile = PowerProfile::get_current_profile_from_sysfs(&self.amdgpu_device.sysfs_path)
             .expect("Error: Failed to get current power profile.");
+
         if current_profile != profile {
             let profile = (profile as u32).to_string();
             fs::write(&self.amdgpu_device.power_profile_path, profile)

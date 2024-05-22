@@ -80,6 +80,7 @@ fn main() {
 
     for app in &app_devices {
         debug!("set default power profile ({})", app.config_device.default_profile);
+        app.set_default_perf_level();
         app.set_default_power_profile();
     }
 
@@ -149,7 +150,7 @@ fn main() {
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!("reset perf_level and power_profile");
-                app.reset_perf_level();
+                app.set_default_perf_level();
                 app.set_default_power_profile();
                 app.cache_pid = None;
             }
