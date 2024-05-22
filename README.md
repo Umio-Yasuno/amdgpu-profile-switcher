@@ -9,14 +9,16 @@ The tool switches between perf level (`power_dpm_force_performance_level`) and p
 
 ```
 FLAGS:
-   --procs
-       Dump current all process names.
-   --check-config
-       Check config file.
-   --generate-config
-       Output config file to stdout.
-   --help
-       Print help information.
+    --procs
+        Dump all current process names.
+    --check-config
+        Check the config file.
+    --generate-config
+        Output the config file to stdout.
+    --profiles
+        Dump all supported power profiles.
+    --help
+        Print help information.
 ```
 
 If you want to specify a config file, set the path to the file in `APS_CONFIG_PATH`.  

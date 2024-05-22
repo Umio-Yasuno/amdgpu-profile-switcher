@@ -7,7 +7,7 @@ const HELP_MSG: &str = concat!(
     "\n",
     "FLAGS:\n",
     "    --procs\n",
-    "        Dump current all process names.\n",
+    "        Dump all current process names.\n",
     "    --check-config\n",
     "        Check the config file.\n",
     "    --generate-config\n",
