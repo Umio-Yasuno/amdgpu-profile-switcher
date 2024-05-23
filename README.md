@@ -33,6 +33,8 @@ $ cargo build --release
 $ sudo cp ./target/release/amdgpu-profile-switcher /usr/bin/
 $ sudo cp ./debian/amdgpu-profile-switcher.service /etc/systemd/system/
 $ amdgpu-profile-switcher --generate-config | sudo tee /etc/xdg/amdgpu-profile-switcher.ron
+$ sudo systemctl enable amdgpu-profile-switcher
+$ sudo systemctl start amdgpu-profile-switcher
 ```
 
 ### Debian/Ubuntu (.deb)
@@ -42,18 +44,8 @@ $ cd amdgpu-profile-switcher
 $ cargo deb
 $ sudo dpkg -i ./target/debian/amdgpu-profile-switcher.*deb
 $ amdgpu-profile-switcher --generate-config | sudo tee /etc/xdg/amdgpu-profile-switcher.ron
-```
-
-### .rpm
-```
-$ cargo build --release
-$ cargo generate-rpm
-```
-
-#### systemd
-```
-sudo systemctl enable amdgpu-profile-switcher
-sudo systemctl start amdgpu-profile-switcher
+$ sudo systemctl enable amdgpu-profile-switcher
+$ sudo systemctl start amdgpu-profile-switcher
 ```
 
 ## Config example
