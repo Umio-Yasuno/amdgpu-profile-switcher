@@ -139,7 +139,7 @@ fn main() {
     debug!("run loop");
 
     let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(128);
-    let mut name_list: Vec<String> = app_devices.iter().map(|app| app.name_list()).flatten().collect();
+    let mut name_list: Vec<String> = app_devices.iter().flat_map(|app| app.name_list()).collect();
 
     loop {
         if modified.load(Ordering::Acquire) {
