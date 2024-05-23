@@ -41,7 +41,7 @@ pub struct ConfigPerDevice {
     pub entries: Vec<ConfigEntry>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigEntry {
     pub name: String,
     pub perf_level: Option<String>,
@@ -150,7 +150,7 @@ impl ConfigEntry {
         Ok(profile)
     }
 
-    fn parse(&self) -> Result<ParsedConfigEntry, ParseConfigError> {
+    pub fn parse(&self) -> Result<ParsedConfigEntry, ParseConfigError> {
         if self.name.is_empty() {
             return Err(ParseConfigError::EntryNameIsEmpty);
         }

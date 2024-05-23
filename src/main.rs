@@ -6,13 +6,13 @@ use proc_prog_name::ProcProgEntry;
 use log::debug;
 
 mod config;
-use config::ParsedConfigEntry;
+use config::{ConfigPerDevice, ParsedConfigEntry};
 
 mod amdgpu_device;
 use amdgpu_device::AmdgpuDevice;
 
 mod args;
-use args::{AppMode, MainOpt};
+use args::{AppMode, MainOpt, SubCommand};
 
 mod utils;
 
@@ -33,6 +33,39 @@ fn main() {
 
     {
         let main_opt = MainOpt::parse();
+
+        match main_opt.sub_command {
+            SubCommand::AddEntry((pci, entry)) => {
+                let mut config = utils::load_raw_config(&config_path);
+
+                if let Some(config_device) = config.config_devices
+                    .iter_mut()
+                    .find(|device| pci == device.pci.parse().unwrap())
+                {
+                    config_device.entries.insert(0, entry);
+                } else {
+                    let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
+
+                    if !pci_devs.iter().any(|pci_dev| pci_dev == &pci) {
+                        pci_list!(pci_devs, pci);
+                    }
+
+                    let add_config_device = ConfigPerDevice {
+                        pci: pci.to_string(),
+                        default_perf_level: None,
+                        default_profile: None,
+                        entries: vec![entry],
+                    };
+
+                    config.config_devices.push(add_config_device);
+                }
+
+                utils::save_config_file(&config_path, &config).unwrap();
+
+                return;
+            },
+            _ => {},
+        }
 
         match main_opt.app_mode {
             AppMode::DumpProcs => {
@@ -121,6 +154,14 @@ fn main() {
                     .find(|app| app.amdgpu_device.pci_bus == config_device.pci)
                 {
                     app.config_device.clone_from(config_device);
+                } else if let Some(pci) = pci_devs.iter().find(|&pci_dev| pci_dev == &config_device.pci) {
+                    let new_app = AppDevice {
+                        amdgpu_device: AmdgpuDevice::get_from_pci_bus(*pci).unwrap(),
+                        config_device: config_device.clone(),
+                        cache_pid: None,
+                    };
+
+                    app_devices.push(new_app);
                 } else {
                     pci_list!(pci_devs, config_device.pci);
                 }

@@ -8,6 +8,15 @@ The tool switches between perf level (`power_dpm_force_performance_level`) and p
 ```
 
 ```
+# Add the config entry
+amdgpu-profile-switcher add --pci 0000:08:00.0 --name glxgears --profile "BOOTUP_DEFAULT"
+```
+
+```
+COMMANDS:
+    add
+        Add the config entry to the config file.
+        `--pci, --name` must be specified. (`--perf_level, --profile` are optional)
 FLAGS:
     --procs
         Dump all current process names.

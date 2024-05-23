@@ -51,7 +51,6 @@ const PERF_LEVEL_LIST: &[&str] = &[
     "perf_determinism",
 ];
 
-
 const PROFILE_LIST: &[&str] = &[
     "BOOTUP_DEFAULT",
     "3D_FULL_SCREEN",
@@ -65,6 +64,14 @@ const PROFILE_LIST: &[&str] = &[
     "UNCAPPED",
 ];
 
+pub fn load_raw_config(config_path: &Path) -> Config {
+    let s = std::fs::read_to_string(config_path).unwrap();
+
+    match de::from_str(&s) {
+        Ok(v) => v,
+        Err(e) => panic!("{e:?}"),
+    }
+}
 
 pub fn load_config(config_path: &Path) -> ParsedConfig {
     let s = std::fs::read_to_string(config_path).unwrap();
@@ -192,4 +199,10 @@ pub fn generate_config() -> ron::Result<String> {
     let config = Config { config_devices };
 
     ser::to_string_pretty(&config, Default::default())
+}
+
+pub fn save_config_file(config_path: &Path, config: &Config) -> std::io::Result<()> {
+    let s = ser::to_string_pretty(&config, Default::default()).unwrap();
+
+    fs::write(config_path, s)
 }
