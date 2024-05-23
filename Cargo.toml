@@ -42,5 +42,5 @@ summary = """\
 The tool switches between perf level (`power_dpm_force_performance_level`) and power_profile (`pp_power_profile_mode`) depending on the process program name. (requires root privileges)"""
 assets = [
     { source = "target/release/amdgpu-profile-switcher", dest = "/usr/bin/", mode = "755" },
-    { source = "debian/amdgpu-profile-switcher.service", dest = "/lib/systemd/system", mode = "644" },
+    { source = "debian/amdgpu-profile-switcher.service", dest = "/lib/systemd/system/", mode = "644" },
 ]
