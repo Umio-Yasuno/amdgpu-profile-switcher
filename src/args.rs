@@ -52,6 +52,54 @@ pub struct MainOpt {
 }
 
 impl MainOpt {
+    fn parse_add_subcommand(&mut self) {
+        let mut args = std::env::args().skip(2);
+        let mut pci = String::new();
+        let mut entry = ConfigEntry::default();
+
+        while let Some(arg) = args.next() {
+            match arg.as_str() {
+                "--pci" => pci = args
+                    .next()
+                    .unwrap_or_else(|| panic!("`--pci <String>` is missing.")),
+                "--name" => entry.name = args
+                    .next()
+                    .map(|arg| arg.to_string())
+                    .unwrap_or_else(|| panic!("`--name <String>` is missing.")),
+                "--perf_level" => entry.perf_level = args
+                    .next()
+                    .map(|arg| arg.to_string())
+                    .or_else(|| panic!("`--perf_level <String>` is missing.")),
+                "--profile" => entry.profile = args
+                    .next()
+                    .map(|arg| arg.to_string())
+                    .or_else(|| panic!("`--profile_level <String>` is missing.")),
+                _ => panic!("Unknown Option for add: {arg:?}"),
+            }
+        }
+
+        if pci.is_empty() {
+            panic!("<String> for `--pci` is empty.");
+        }
+
+        if entry.name.is_empty() {
+            panic!("<String> for `--name` is empty.");
+        }
+
+        if entry.perf_level.is_none() && entry.profile.is_none() {
+            eprintln!("Warn: Both `perf_level` and `profile` are empty.");
+        }
+
+        let pci: PCI::BUS_INFO = pci.parse().unwrap_or_else(|e| {
+            panic!("Error: {e:?} ({pci:?})");
+        });
+
+        // valid
+        let _ = entry.parse().unwrap();
+
+        self.sub_command = SubCommand::AddEntry((pci, entry));
+    }
+
     pub fn parse() -> Self {
         let mut args = std::env::args().skip(1).peekable();
         let mut opt = Self::default();
@@ -59,52 +107,7 @@ impl MainOpt {
         if let Some(first_arg) = args.peek() {
             match first_arg.as_str() {
                 "add" => {
-                    let _ = args.next();
-                    let mut pci = String::new();
-                    let mut entry = ConfigEntry::default();
-
-                    while let Some(arg) = args.next() {
-                        match arg.as_str() {
-                            "--pci" => pci = args
-                                .next()
-                                .unwrap_or_else(|| panic!("`--pci <String>` is missing.")),
-                            "--name" => entry.name = args
-                                .next()
-                                .map(|arg| arg.to_string())
-                                .unwrap_or_else(|| panic!("`--name <String>` is missing.")),
-                            "--perf_level" => entry.perf_level = args
-                                .next()
-                                .map(|arg| arg.to_string())
-                                .or_else(|| panic!("`--perf_level <String>` is missing.")),
-                            "--profile" => entry.profile = args
-                                .next()
-                                .map(|arg| arg.to_string())
-                                .or_else(|| panic!("`--profile_level <String>` is missing.")),
-                            _ => panic!("Unknown Option for add: {arg:?}"),
-                        }
-                    }
-
-                    if pci.is_empty() {
-                        panic!("<String> for `--pci` is empty.");
-                    }
-
-                    if entry.name.is_empty() {
-                        panic!("<String> for `--name` is empty.");
-                    }
-
-                    if entry.perf_level.is_none() && entry.profile.is_none() {
-                        eprintln!("Warn: Both `perf_level` and `profile` are empty.");
-                    }
-
-                    let pci: PCI::BUS_INFO = pci.parse().unwrap_or_else(|e| {
-                        panic!("Error: {e:?} ({pci:?})");
-                    });
-
-                    // valid
-                    let _ = entry.parse().unwrap();
-
-                    opt.sub_command = SubCommand::AddEntry((pci, entry));
-
+                    opt.parse_add_subcommand();
                     return opt;
                 },
                 _ => {},
