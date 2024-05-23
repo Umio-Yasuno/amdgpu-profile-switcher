@@ -102,7 +102,6 @@ fn main() {
     }
 
     let config = utils::load_config(&config_path);
-
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
     if pci_devs.is_empty() {
@@ -128,7 +127,11 @@ fn main() {
         if !app.amdgpu_device.check_permissions() {
             panic!("Error: PermissionDenied for sysfs");
         }
-        debug!("set default power profile ({})", app.config_device.default_profile);
+        debug!(
+            "set default perf_level ({:?}) and power_profile ({:?})",
+            app.config_device.default_perf_level,
+            app.config_device.default_profile,
+        );
         app.set_default_perf_level();
         app.set_default_power_profile();
     }
@@ -138,8 +141,8 @@ fn main() {
     env_logger::init();
     debug!("run loop");
 
-    let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(128);
     let mut name_list: Vec<String> = app_devices.iter().flat_map(|app| app.name_list()).collect();
+    let mut procs: Vec<ProcProgEntry> = Vec::with_capacity(name_list.len());
 
     loop {
         if modified.load(Ordering::Acquire) {
