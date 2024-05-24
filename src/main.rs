@@ -101,22 +101,24 @@ fn main() {
         }
     }
 
-    let config = utils::load_config(&config_path);
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
     if pci_devs.is_empty() {
         panic!("No AMDGPU devices.");
     }
 
-    let mut app_devices: Vec<_> = config.config_devices.iter().filter_map(|config_device| {
-        let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
-            pci_list!(pci_devs, config_device.pci);
-        };
-        let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
-        let config_device = config_device.clone();
+    let mut app_devices: Vec<_> = {
+        let config = utils::load_config(&config_path);
+        config.config_devices.iter().filter_map(|config_device| {
+            let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
+                pci_list!(pci_devs, config_device.pci);
+            };
+            let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
+            let config_device = config_device.clone();
 
-        Some(AppDevice { amdgpu_device, config_device, cache_pid: None })
-    }).collect();
+            Some(AppDevice { amdgpu_device, config_device, cache_pid: None })
+        }).collect()
+    };
 
     if app_devices.is_empty() {
         panic!("No available AMDGPU devices.");
