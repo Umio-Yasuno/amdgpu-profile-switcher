@@ -103,5 +103,8 @@ $ sudo systemctl start amdgpu-profile-switcher
 )
 ```
 
+## Tips
+ * If you want to apply a single setting to Steam games launched via Wine/Proton, I recommend adding an entry for "steam.exe".
+
 ## Reference
  * <https://www.kernel.org/doc/html/latest/gpu/amdgpu/thermal.html#gpu-sysfs-power-state-interfaces>
