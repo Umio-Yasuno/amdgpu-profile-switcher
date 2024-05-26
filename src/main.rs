@@ -124,6 +124,9 @@ fn main() {
         panic!("No available AMDGPU devices.");
     }
 
+    env_logger::init();
+    debug!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+
     for app in &app_devices {
         debug!("check permissions");
         if !app.amdgpu_device.check_permissions() {
@@ -140,7 +143,6 @@ fn main() {
 
     let modified = utils::watch_config_file(&config_path);
 
-    env_logger::init();
     debug!("run loop");
 
     let mut name_list: Vec<String> = app_devices.iter().flat_map(|app| app.name_list()).collect();
