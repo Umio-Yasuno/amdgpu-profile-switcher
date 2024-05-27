@@ -35,8 +35,18 @@ fn main() {
         let main_opt = MainOpt::parse();
 
         match main_opt.sub_command {
-            SubCommand::AddEntry((pci, entry)) => {
+            SubCommand::AddEntry((pci, index, entry)) => {
                 let mut config = utils::load_raw_config(&config_path);
+                let pci = if let Some(pci) = pci {
+                    pci
+                } else if let Some(index) = index {
+                    config.config_devices
+                        .get(index)
+                        .and_then(|device| device.pci.parse().ok())
+                        .unwrap()
+                } else {
+                    panic!("Both `--pci` and `-i/--index` are empty.");
+                };
 
                 if let Some(config_device) = config.config_devices
                     .iter_mut()

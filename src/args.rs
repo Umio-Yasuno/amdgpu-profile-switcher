@@ -8,7 +8,8 @@ const HELP_MSG: &str = concat!(
     "COMMANDS:\n",
     "    add\n",
     "        Add the config entry to the config file.\n",
-    "        `--pci, --name` must be specified. (`--perf_level, --profile` are optional)\n",
+    "        `--pci <String>` or `-i/--index <usize>` and --name <String>` must be specified.\n",
+    "        (`--perf_level, --profile` are optional)\n",
     "FLAGS:\n",
     "    --procs\n",
     "        Dump all current process names.\n",
@@ -30,7 +31,7 @@ use libdrm_amdgpu_sys::PCI;
 
 #[derive(Default)]
 pub enum SubCommand {
-    AddEntry((PCI::BUS_INFO, ConfigEntry)),
+    AddEntry((Option<PCI::BUS_INFO>, Option<usize>, ConfigEntry)),
     #[default]
     Nop,
 }
@@ -55,10 +56,15 @@ impl MainOpt {
     fn parse_add_subcommand(&mut self) {
         let mut args = std::env::args().skip(2);
         let mut pci = String::new();
+        let mut index = String::new();
         let mut entry = ConfigEntry::default();
 
         while let Some(arg) = args.next() {
             match arg.as_str() {
+                "-i" | "--index" => index = args
+                    .next()
+                    .map(|arg| arg.to_string())
+                    .unwrap_or_else(|| panic!("`-i/--index <usize>` is missing.")),
                 "--pci" => pci = args
                     .next()
                     .unwrap_or_else(|| panic!("`--pci <String>` is missing.")),
@@ -78,10 +84,6 @@ impl MainOpt {
             }
         }
 
-        if pci.is_empty() {
-            panic!("<String> for `--pci` is empty.");
-        }
-
         if entry.name.is_empty() {
             panic!("<String> for `--name` is empty.");
         }
@@ -90,14 +92,13 @@ impl MainOpt {
             eprintln!("Warn: Both `perf_level` and `profile` are empty.");
         }
 
-        let pci: PCI::BUS_INFO = pci.parse().unwrap_or_else(|e| {
-            panic!("Error: {e:?} ({pci:?})");
-        });
+        let pci = pci.parse().ok();
+        let index = index.parse().ok();
 
         // valid
         let _ = entry.parse().unwrap();
 
-        self.sub_command = SubCommand::AddEntry((pci, entry));
+        self.sub_command = SubCommand::AddEntry((pci, index, entry));
     }
 
     pub fn parse() -> Self {
