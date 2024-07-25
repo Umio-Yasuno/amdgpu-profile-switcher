@@ -102,7 +102,14 @@ fn main() {
                     let Some(amdgpu_device) = AmdgpuDevice::get_from_pci_bus(pci) else { continue };
                     let profiles = amdgpu_device.get_all_supported_power_profile();
 
-                    println!("{}: {:#?}", amdgpu_device.pci_bus, profiles)
+                    println!(
+                        "{} ({:#X}:{:#X}, {}): {:#?}",
+                        amdgpu_device.device_name,
+                        amdgpu_device.device_id,
+                        amdgpu_device.revision_id,
+                        amdgpu_device.pci_bus,
+                        profiles,
+                    );
                 }
 
                 return;
@@ -215,11 +222,19 @@ fn main() {
                 debug!("target process: {}", apply_config.name);
                 if let Some(perf_level) = apply_config.perf_level {
                     app.set_perf_level(perf_level);
-                    debug!("Apply {perf_level:?} to {}", app.amdgpu_device.pci_bus);
+                    debug!(
+                        "Apply {perf_level:?} to {} ({})",
+                        app.amdgpu_device.device_name,
+                        app.amdgpu_device.pci_bus,
+                    );
                 }
                 if let Some(profile) = apply_config.profile {
                     app.set_power_profile(profile);
-                    debug!("Apply {profile:?} to {}", app.amdgpu_device.pci_bus);
+                    debug!(
+                        "Apply {profile:?} to {} ({})",
+                        app.amdgpu_device.device_name,
+                        app.amdgpu_device.pci_bus,
+                    );
                 }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
