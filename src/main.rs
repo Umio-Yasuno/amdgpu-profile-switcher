@@ -99,7 +99,9 @@ fn main() {
                 let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
 
                 for pci in pci_devs {
-                    let Some(amdgpu_device) = AmdgpuDevice::get_from_pci_bus(pci) else { continue };
+                    let Some(amdgpu_device) = AmdgpuDevice::get_from_pci_bus(pci) else {
+                        continue
+                    };
                     let profiles = amdgpu_device.get_all_supported_power_profile();
 
                     println!(
@@ -114,7 +116,26 @@ fn main() {
 
                 return;
             },
-            _ => {},
+            AppMode::DeviceList => {
+                let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
+
+                for pci in pci_devs {
+                    let Some(amdgpu_device) = AmdgpuDevice::get_from_pci_bus(pci) else {
+                        continue
+                    };
+
+                    println!(
+                        "{} ({:#X}:{:#X}, {})",
+                        amdgpu_device.device_name,
+                        amdgpu_device.device_id,
+                        amdgpu_device.revision_id,
+                        amdgpu_device.pci_bus,
+                    );
+                }
+
+                return;
+            },
+            AppMode::Run => {},
         }
     }
 

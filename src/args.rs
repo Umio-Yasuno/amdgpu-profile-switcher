@@ -19,6 +19,8 @@ const HELP_MSG: &str = concat!(
     "        Output the config file to stdout.\n",
     "    --profiles\n",
     "        Dump all supported power profiles.\n",
+    "    --list\n",
+    "        Dump AMDGPU device list.\n",
     "    --help\n",
     "        Print help information.\n",
     "ENV:\n",
@@ -44,6 +46,7 @@ pub enum AppMode {
     CheckConfig,
     GenerateConfig,
     DumpSupportedPowerProfile,
+    DeviceList,
 }
 
 #[derive(Default)]
@@ -121,6 +124,7 @@ impl MainOpt {
                 "--check-config" => opt.app_mode = AppMode::CheckConfig,
                 "--generate-config" => opt.app_mode = AppMode::GenerateConfig,
                 "--profiles" => opt.app_mode = AppMode::DumpSupportedPowerProfile,
+                "--list" => opt.app_mode = AppMode::DeviceList,
                 "--help" => {
                     println!("{HELP_MSG}");
                     std::process::exit(0);
