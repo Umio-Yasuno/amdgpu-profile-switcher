@@ -29,13 +29,14 @@ macro_rules! pci_list {
 }
 
 fn main() {
-    let config_path = utils::config_path().expect("Config file is not found.");
+    let config_path = utils::config_path();
 
     {
         let main_opt = MainOpt::parse();
 
         match main_opt.sub_command {
             SubCommand::AddEntry((pci, index, entry)) => {
+                let config_path = config_path.unwrap();
                 let mut config = utils::load_raw_config(&config_path);
                 let pci = if let Some(pci) = pci {
                     pci
@@ -85,6 +86,7 @@ fn main() {
                 return;
             },
             AppMode::CheckConfig => {
+                let config_path = config_path.unwrap();
                 let config = utils::load_config(&config_path);
                 println!("config_path: {config_path:?}");
                 println!("{config:#?}");
@@ -140,6 +142,7 @@ fn main() {
     }
 
     let pci_devs = AMDGPU::get_all_amdgpu_pci_bus();
+    let config_path = config_path.unwrap();
 
     if pci_devs.is_empty() {
         panic!("No AMDGPU devices.");
