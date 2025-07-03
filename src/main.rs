@@ -171,6 +171,14 @@ fn main() {
     debug!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
     for app in &app_devices {
+        'wait: loop {
+            if !app.check_if_device_is_active() {
+                debug!("wait until the device is active...");
+                std::thread::sleep(std::time::Duration::from_secs(1));
+            } else {
+                break 'wait;
+            }
+        }
         debug!("check permissions");
         if !app.amdgpu_device.check_permissions() {
             panic!("Error: PermissionDenied for sysfs");
@@ -242,6 +250,10 @@ fn main() {
             }
 
             if app.cache_pid.is_some() && pid == app.cache_pid {
+                continue 'device;
+            }
+
+            if !app.check_if_device_is_active() {
                 continue 'device;
             }
 
