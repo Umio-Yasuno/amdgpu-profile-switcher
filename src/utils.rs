@@ -192,6 +192,7 @@ pub fn generate_config() -> ron::Result<String> {
         perf_level: None,
         profile: Some("BOOTUP_DEFAULT".to_string()),
         power_cap_watt: None,
+        fan_target_temperature: None,
     };
     let config_devices: Vec<_> = pci_devs
         .iter()
@@ -206,6 +207,7 @@ pub fn generate_config() -> ron::Result<String> {
                 _max_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.max),
                 default_perf_level: None,
                 default_profile: None,
+                default_fan_target_temperature: None,
                 entries: vec![entry.clone()],
             })
         })

@@ -31,6 +31,10 @@ macro_rules! pci_list {
 fn main() {
     let config_path = utils::config_path();
 
+    if config_path.is_none() {
+        eprintln!("Can't find the config file");
+    }
+
     {
         let main_opt = MainOpt::parse();
 
@@ -69,6 +73,7 @@ fn main() {
                         _max_power_cap_watt: None,
                         default_perf_level: None,
                         default_profile: None,
+                        default_fan_target_temperature: None,
                         entries: vec![entry],
                     };
 

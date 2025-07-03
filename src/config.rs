@@ -16,6 +16,7 @@ pub struct ParsedConfigPerDevice {
     pub _max_power_cap_watt: Option<u32>,
     pub default_perf_level: DpmForcedLevel,
     pub default_profile: PowerProfile,
+    pub default_fan_target_temperature: Option<u32>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -31,6 +32,7 @@ pub struct ParsedConfigEntry {
     pub perf_level: Option<DpmForcedLevel>,
     pub profile: Option<PowerProfile>,
     pub power_cap_watt: Option<u32>,
+    pub fan_target_temperature: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -47,6 +49,7 @@ pub struct ConfigPerDevice {
     pub _max_power_cap_watt: Option<u32>,
     pub default_perf_level: Option<String>,
     pub default_profile: Option<String>,
+    pub default_fan_target_temperature: Option<u32>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -56,6 +59,7 @@ pub struct ConfigEntry {
     pub perf_level: Option<String>,
     pub profile: Option<String>,
     pub power_cap_watt: Option<u32>,
+    pub fan_target_temperature: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -135,6 +139,7 @@ impl ConfigPerDevice {
             _max_power_cap_watt: None,
             default_perf_level,
             default_profile,
+            default_fan_target_temperature: self.default_fan_target_temperature,
             entries: entries?,
         })
     }
@@ -178,8 +183,9 @@ impl ConfigEntry {
         let perf_level = self.parse_perf_level()?;
         let profile = self.parse_power_profile()?;
         let power_cap_watt = self.power_cap_watt;
+        let fan_target_temperature = self.fan_target_temperature;
 
-        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt })
+        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt, fan_target_temperature })
     }
 }
 
