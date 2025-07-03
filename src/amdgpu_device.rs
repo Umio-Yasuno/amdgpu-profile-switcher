@@ -14,6 +14,7 @@ pub struct AmdgpuDevice {
     pub power_profile_path: PathBuf,
     pub dpm_perf_level_path: PathBuf,
     pub power_cap: Option<PowerCap>,
+    pub fan_target_temperature: Option<FanTargetTemp>,
 }
 
 impl AmdgpuDevice {
@@ -39,6 +40,7 @@ impl AmdgpuDevice {
             .unwrap_or(AMDGPU::DEFAULT_DEVICE_NAME.to_string());
         let hwmon_path = pci_bus.get_hwmon_path()?;
         let power_cap = PowerCap::from_hwmon_path(&hwmon_path);
+        let fan_target_temperature = FanTargetTemp::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
@@ -50,6 +52,7 @@ impl AmdgpuDevice {
             power_profile_path,
             dpm_perf_level_path,
             power_cap,
+            fan_target_temperature,
         })
     }
 
@@ -63,5 +66,41 @@ impl AmdgpuDevice {
 
     pub fn get_all_supported_power_profile(&self) -> Vec<PowerProfile> {
         PowerProfile::get_all_supported_profiles_from_sysfs(&self.sysfs_path)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FanTargetTemp {
+    pub target_temp: u32,
+    pub temp_range: [u32; 2],
+}
+
+impl FanTargetTemp {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let mut target_temp: Option<u32> = None;
+        let mut temp_range: Option<[u32; 2]> = None;
+
+        {
+            let path = path.into().join("gpu_od/fan_ctrl/fan_target_temperature");
+            let mut s = std::fs::read_to_string(path).ok()?;
+            let mut lines = s.lines();
+
+            lines.find(|l| l.starts_with("FAN_TARGET_TEMPERATURE:"));
+            target_temp = lines.next().and_then(|s| s.parse().ok());
+            lines.find(|l| l.starts_with("OD_RANGE:"));
+            temp_range = lines.next().and_then(|s| {
+                let (min, max) = s
+                    .trim_start_matches("TARGET_TEMPERATURE: ")
+                    .split_once(" ")?;
+                let [min, max] = [min, max].map(|s| s.parse::<u32>().ok());
+
+                Some([min?, max?])
+            });
+        }
+
+        Some(Self {
+            target_temp: target_temp?,
+            temp_range: temp_range?,
+        })
     }
 }

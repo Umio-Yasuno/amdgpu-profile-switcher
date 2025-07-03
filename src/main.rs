@@ -69,11 +69,11 @@ fn main() {
                         pci: pci.to_string(),
                         _device_name: None,
                         default_power_cap_watt: None,
-                        _min_power_cap_watt: None,
-                        _max_power_cap_watt: None,
+                        _power_cap_watt_range: None,
                         default_perf_level: None,
                         default_profile: None,
                         default_fan_target_temperature: None,
+                        _fan_target_temperature_range: None,
                         entries: vec![entry],
                     };
 

@@ -198,16 +198,18 @@ pub fn generate_config() -> ron::Result<String> {
         .iter()
         .filter_map(|pci| {
             let dev = AmdgpuDevice::get_from_pci_bus(*pci)?;
+            let _power_cap_watt_range = dev.power_cap.as_ref().map(|cap| [cap.min, cap.max]);
+            let _fan_target_temperature_range = dev.fan_target_temperature.as_ref().map(|fan| fan.temp_range);
 
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
                 _device_name: Some(dev.device_name),
                 default_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.default),
-                _min_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.min),
-                _max_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.max),
+                _power_cap_watt_range,
                 default_perf_level: None,
                 default_profile: None,
-                default_fan_target_temperature: None,
+                default_fan_target_temperature: dev.fan_target_temperature.as_ref().map(|fan| fan.target_temp),
+                _fan_target_temperature_range,
                 entries: vec![entry.clone()],
             })
         })
