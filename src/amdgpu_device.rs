@@ -15,6 +15,7 @@ pub struct AmdgpuDevice {
     pub dpm_perf_level_path: PathBuf,
     pub power_cap: Option<PowerCap>,
     pub fan_target_temperature: Option<FanTargetTemp>,
+    pub fan_minimum_pwm: Option<FanMinPwm>,
 }
 
 impl AmdgpuDevice {
@@ -41,6 +42,7 @@ impl AmdgpuDevice {
         let hwmon_path = pci_bus.get_hwmon_path()?;
         let power_cap = PowerCap::from_hwmon_path(&hwmon_path);
         let fan_target_temperature = FanTargetTemp::from_sysfs_path(&sysfs_path);
+        let fan_minimum_pwm = FanMinPwm::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
@@ -53,6 +55,7 @@ impl AmdgpuDevice {
             dpm_perf_level_path,
             power_cap,
             fan_target_temperature,
+            fan_minimum_pwm,
         })
     }
 
@@ -101,6 +104,42 @@ impl FanTargetTemp {
         Some(Self {
             target_temp: target_temp?,
             temp_range: temp_range?,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FanMinPwm {
+    pub minimum_pwm: u32,
+    pub pwm_range: [u32; 2],
+}
+
+impl FanMinPwm {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let mut minimum_pwm: Option<u32> = None;
+        let mut pwm_range: Option<[u32; 2]> = None;
+
+        {
+            let path = path.into().join("gpu_od/fan_ctrl/fan_minimum_pwm");
+            let mut s = std::fs::read_to_string(path).ok()?;
+            let mut lines = s.lines();
+
+            lines.find(|l| l.starts_with("FAN_MINIMUM_PWM:"));
+            minimum_pwm = lines.next().and_then(|s| s.parse().ok());
+            lines.find(|l| l.starts_with("OD_RANGE:"));
+            pwm_range = lines.next().and_then(|s| {
+                let (min, max) = s
+                    .trim_start_matches("MINIMUM_PWM: ")
+                    .split_once(" ")?;
+                let [min, max] = [min, max].map(|s| s.parse::<u32>().ok());
+
+                Some([min?, max?])
+            });
+        }
+
+        Some(Self {
+            minimum_pwm: minimum_pwm?,
+            pwm_range: pwm_range?,
         })
     }
 }

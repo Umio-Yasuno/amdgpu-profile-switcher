@@ -199,20 +199,42 @@ pub fn generate_config() -> ron::Result<String> {
         .iter()
         .filter_map(|pci| {
             let dev = AmdgpuDevice::get_from_pci_bus(*pci)?;
+            let default_power_cap_watt = dev.power_cap.as_ref().map(|cap| {
+                if cap.current == cap.default {
+                    cap.default
+                } else {
+                    cap.current
+                }
+            });
             let _power_cap_watt_range = dev.power_cap.as_ref().map(|cap| [cap.min, cap.max]);
-            let _fan_target_temperature_range = dev.fan_target_temperature.as_ref().map(|fan| fan.temp_range);
+            let default_fan_target_temperature = dev
+                .fan_target_temperature
+                .as_ref()
+                .map(|fan| fan.target_temp);
+            let _fan_target_temperature_range = dev
+                .fan_target_temperature
+                .as_ref()
+                .map(|fan| fan.temp_range);
+            let default_fan_minimum_pwm = dev
+                .fan_minimum_pwm
+                .as_ref()
+                .map(|fan| fan.minimum_pwm);
+            let _fan_minimum_pwm_range = dev
+                .fan_minimum_pwm
+                .as_ref()
+                .map(|fan| fan.pwm_range);
 
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
                 _device_name: Some(dev.device_name),
-                default_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.default),
+                default_power_cap_watt,
                 _power_cap_watt_range,
                 default_perf_level: None,
                 default_profile: None,
-                default_fan_target_temperature: dev.fan_target_temperature.as_ref().map(|fan| fan.target_temp),
+                default_fan_target_temperature,
                 _fan_target_temperature_range,
-                default_fan_minimum_pwm: None,
-                _fan_minimum_pwm_range: None,
+                default_fan_minimum_pwm,
+                _fan_minimum_pwm_range,
                 entries: vec![entry.clone()],
             })
         })

@@ -76,20 +76,39 @@ impl AppDevice {
             .amdgpu_device
             .sysfs_path
             .join("gpu_od/fan_ctrl/fan_target_temperature");
-        let target_temp = format!("{target_temp}\n");
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
             .open(&fan_target_temp_path)?;
         let target_temp = format!("{target_temp} ");
         file.write_all(target_temp.as_bytes())?;
-        fs::write(&fan_target_temp_path, "c")
+        file.write_all(b"c")
     }
 
     pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
         let Some(target_temp) = self.config_device.default_fan_target_temperature
             else { return Err(io::Error::other("fan_target_temperature is None")) };
         self.set_fan_target_temp(target_temp)
+    }
+
+    pub fn set_fan_minimum_pwm(&self, minimum_pwm: u32) -> io::Result<()> {
+        let fan_minimum_pwm_path = self
+            .amdgpu_device
+            .sysfs_path
+            .join("gpu_od/fan_ctrl/fan_minimum_pwm");
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&fan_minimum_pwm_path)?;
+        let minimum_pwm = format!("{minimum_pwm} ");
+        file.write_all(minimum_pwm.as_bytes())?;
+        file.write_all(b"c")
+    }
+
+    pub fn set_default_fan_minimum_pwm(&self) -> io::Result<()> {
+        let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
+            else { return Err(io::Error::other("fan_minimum_pwm is None")) };
+        self.set_fan_minimum_pwm(minimum_pwm)
     }
 
     pub fn name_list(&self) -> Vec<String> {
