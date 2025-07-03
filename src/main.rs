@@ -198,6 +198,7 @@ fn main() {
         let _ = app.set_default_perf_level();
         let _ = app.set_default_power_profile();
         let _ = app.set_default_power_cap();
+        let _ = app.set_default_fan_target_temp();
     }
 
     let modified = utils::watch_config_file(&config_path);
@@ -290,6 +291,14 @@ fn main() {
                         app.amdgpu_device.pci_bus,
                     );
                 }
+                if let Some(target_temp) = apply_config.fan_target_temperature {
+                    let _ = app.set_fan_target_temp(target_temp);
+                    debug!(
+                        "Apply fan_target_temperature {target_temp}C to {} ({})",
+                        app.amdgpu_device.device_name,
+                        app.amdgpu_device.pci_bus,
+                    );
+                }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
@@ -300,6 +309,7 @@ fn main() {
                 let _ = app.set_default_perf_level();
                 let _ = app.set_default_power_profile();
                 let _ = app.set_default_power_cap();
+                let _ = app.set_default_fan_target_temp();
                 app.cache_pid = None;
             }
         }

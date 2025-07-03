@@ -83,6 +83,26 @@ impl AppDevice {
         }
     }
 
+    pub fn set_fan_target_temp(&self, target_temp: u32) -> io::Result<()> {
+        let fan_target_temp_path = self
+            .amdgpu_device
+            .sysfs_path
+            .join("gpu_od/fan_ctrl/fan_target_temperature");
+        fs::write(&fan_target_temp_path, target_temp.to_string())?;
+        fs::write(&fan_target_temp_path, "c")
+    }
+
+    pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
+        let fan_target_temp_path = self
+            .amdgpu_device
+            .sysfs_path
+            .join("gpu_od/fan_ctrl/fan_target_temperature");
+        let Some(target_temp) = self.config_device.default_fan_target_temperature
+            else { return Err(io::Error::other("fan_target_temperature is None")) };
+        fs::write(&fan_target_temp_path, target_temp.to_string())?;
+        fs::write(&fan_target_temp_path, "c")
+    }
+
     pub fn name_list(&self) -> Vec<String> {
         self.config_device.names()
     }
