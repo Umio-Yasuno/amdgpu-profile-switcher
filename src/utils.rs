@@ -191,6 +191,7 @@ pub fn generate_config() -> ron::Result<String> {
         name: "glxgears".to_string(),
         perf_level: None,
         profile: Some("BOOTUP_DEFAULT".to_string()),
+        power_cap_watt: None,
     };
     let config_devices: Vec<_> = pci_devs
         .iter()

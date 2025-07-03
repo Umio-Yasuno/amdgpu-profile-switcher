@@ -182,6 +182,7 @@ fn main() {
         );
         app.set_default_perf_level();
         app.set_default_power_profile();
+        app.set_default_power_cap();
     }
 
     let modified = utils::watch_config_file(&config_path);

@@ -48,6 +48,22 @@ impl AppDevice {
         }
     }
 
+    pub fn set_default_power_cap(&self) {
+        let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap_default");
+        let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
+            else { return };
+        let Some(current_power_cap_watt) = std::fs::read_to_string(power_cap_path)
+            .ok()
+            .and_then(|s| s.trim_end().parse::<u32>().ok())
+            .and_then(|v| v.checked_div(1_000_000)) else { return };
+
+        if target_power_cap_watt != current_power_cap_watt {
+            let power_cap = (target_power_cap_watt * 1_000_000).to_string();
+            fs::write(&self.amdgpu_device.hwmon_path.join("power1_cap"), power_cap)
+                .unwrap_or_else(|e| panic!("IO Error: {e}"));
+        }
+    }
+
     pub fn name_list(&self) -> Vec<String> {
         self.config_device.names()
     }

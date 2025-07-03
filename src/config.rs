@@ -28,6 +28,7 @@ pub struct ParsedConfigEntry {
     pub name: String,
     pub perf_level: Option<DpmForcedLevel>,
     pub profile: Option<PowerProfile>,
+    pub power_cap_watt: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -50,6 +51,7 @@ pub struct ConfigEntry {
     pub name: String,
     pub perf_level: Option<String>,
     pub profile: Option<String>,
+    pub power_cap_watt: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -169,8 +171,9 @@ impl ConfigEntry {
         let name = self.name.clone();
         let perf_level = self.parse_perf_level()?;
         let profile = self.parse_power_profile()?;
+        let power_cap_watt = self.power_cap_watt;
 
-        Ok(ParsedConfigEntry { name, perf_level, profile })
+        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt })
     }
 }
 
