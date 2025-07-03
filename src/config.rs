@@ -15,6 +15,7 @@ pub struct ParsedConfigPerDevice {
     pub default_perf_level: DpmForcedLevel,
     pub default_profile: PowerProfile,
     pub default_fan_target_temperature: Option<u32>,
+    pub default_fan_minimum_pwm: Option<u32>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -31,6 +32,7 @@ pub struct ParsedConfigEntry {
     pub profile: Option<PowerProfile>,
     pub power_cap_watt: Option<u32>,
     pub fan_target_temperature: Option<u32>,
+    pub fan_minimum_pwm: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -48,6 +50,8 @@ pub struct ConfigPerDevice {
     pub default_profile: Option<String>,
     pub default_fan_target_temperature: Option<u32>,
     pub _fan_target_temperature_range: Option<[u32; 2]>,
+    pub default_fan_minimum_pwm: Option<u32>,
+    pub _fan_minimum_pwm_range: Option<[u32; 2]>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -58,6 +62,7 @@ pub struct ConfigEntry {
     pub profile: Option<String>,
     pub power_cap_watt: Option<u32>,
     pub fan_target_temperature: Option<u32>,
+    pub fan_minimum_pwm: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -132,10 +137,11 @@ impl ConfigPerDevice {
         Ok(ParsedConfigPerDevice {
             pci,
             _device_name: None,
-            default_power_cap_watt: None,
+            default_power_cap_watt: self.default_power_cap_watt,
             default_perf_level,
             default_profile,
             default_fan_target_temperature: self.default_fan_target_temperature,
+            default_fan_minimum_pwm: self.default_fan_minimum_pwm,
             entries: entries?,
         })
     }
@@ -180,8 +186,9 @@ impl ConfigEntry {
         let profile = self.parse_power_profile()?;
         let power_cap_watt = self.power_cap_watt;
         let fan_target_temperature = self.fan_target_temperature;
+        let fan_minimum_pwm = self.fan_minimum_pwm;
 
-        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt, fan_target_temperature })
+        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt, fan_target_temperature, fan_minimum_pwm })
     }
 }
 

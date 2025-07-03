@@ -74,6 +74,8 @@ fn main() {
                         default_profile: None,
                         default_fan_target_temperature: None,
                         _fan_target_temperature_range: None,
+                        default_fan_minimum_pwm: None,
+                        _fan_minimum_pwm_range: None,
                         entries: vec![entry],
                     };
 
@@ -197,6 +199,11 @@ fn main() {
         );
         let _ = app.set_default_perf_level();
         let _ = app.set_default_power_profile();
+        debug!(
+            "set default power cap. ({:?}) and fan_target_temperature ({:?})",
+            app.config_device.default_power_cap_watt,
+            app.config_device.default_fan_target_temperature,
+        );
         let _ = app.set_default_power_cap();
         let _ = app.set_default_fan_target_temp();
     }
@@ -306,6 +313,9 @@ fn main() {
                     app.config_device.default_perf_level,
                     app.config_device.default_profile,
                 );
+                if let Some(power_cap) = &app.config_device.default_power_cap_watt {
+                    debug!("set default power cap. ({power_cap}W)");
+                }
                 let _ = app.set_default_perf_level();
                 let _ = app.set_default_power_profile();
                 let _ = app.set_default_power_cap();

@@ -1,4 +1,4 @@
-use std::{fs, io};
+use std::{fs, io::{self, Write}};
 
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
@@ -66,21 +66,9 @@ impl AppDevice {
     }
 
     pub fn set_default_power_cap(&self) -> io::Result<()> {
-        let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap");
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
             else { return Err(io::Error::other(IO_ERROR_POWER_CAP)) };
-        let Some(current_power_cap_watt) = std::fs::read_to_string(power_cap_path)
-            .ok()
-            .and_then(|s| s.trim_end().parse::<u32>().ok())
-            .and_then(|v| v.checked_div(1_000_000))
-            else { return Err(io::Error::other(IO_ERROR_POWER_CAP)) };
-
-        if target_power_cap_watt != current_power_cap_watt {
-            let power_cap = (target_power_cap_watt * 1_000_000).to_string();
-            fs::write(self.amdgpu_device.hwmon_path.join("power1_cap"), power_cap)
-        } else {
-            Ok(())
-        }
+        self.set_power_cap(target_power_cap_watt)
     }
 
     pub fn set_fan_target_temp(&self, target_temp: u32) -> io::Result<()> {
@@ -88,19 +76,20 @@ impl AppDevice {
             .amdgpu_device
             .sysfs_path
             .join("gpu_od/fan_ctrl/fan_target_temperature");
-        fs::write(&fan_target_temp_path, target_temp.to_string())?;
+        let target_temp = format!("{target_temp}\n");
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&fan_target_temp_path)?;
+        let target_temp = format!("{target_temp} ");
+        file.write_all(target_temp.as_bytes())?;
         fs::write(&fan_target_temp_path, "c")
     }
 
     pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
-        let fan_target_temp_path = self
-            .amdgpu_device
-            .sysfs_path
-            .join("gpu_od/fan_ctrl/fan_target_temperature");
         let Some(target_temp) = self.config_device.default_fan_target_temperature
             else { return Err(io::Error::other("fan_target_temperature is None")) };
-        fs::write(&fan_target_temp_path, target_temp.to_string())?;
-        fs::write(&fan_target_temp_path, "c")
+        self.set_fan_target_temp(target_temp)
     }
 
     pub fn name_list(&self) -> Vec<String> {
