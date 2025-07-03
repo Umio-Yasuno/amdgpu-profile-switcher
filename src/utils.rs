@@ -5,7 +5,7 @@ use std::fs;
 
 use ron::{de, ser};
 
-use crate::AMDGPU;
+use crate::{AMDGPU, AmdgpuDevice};
 use crate::config::{Config, ConfigPerDevice, ConfigEntry, ParsedConfig, ParseConfigError};
 
 const CONFIG_FILE_NAME: &str = "amdgpu-profile-switcher.ron";
@@ -194,7 +194,17 @@ pub fn generate_config() -> ron::Result<String> {
     };
     let config_devices: Vec<_> = pci_devs
         .iter()
-        .map(|pci| ConfigPerDevice { pci: pci.to_string(), default_perf_level: None, default_profile: None, entries: vec![entry.clone()] })
+        .filter_map(|pci| {
+            let dev = AmdgpuDevice::get_from_pci_bus(*pci)?;
+
+            Some(ConfigPerDevice {
+                pci: pci.to_string(),
+                device_name: Some(dev.device_name),
+                default_perf_level: None,
+                default_profile: None,
+                entries: vec![entry.clone()],
+            })
+        })
         .collect();
     let config = Config { config_devices };
 
