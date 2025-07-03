@@ -10,7 +10,7 @@ pub struct ParsedConfig {
 #[derive(Debug, Clone)]
 pub struct ParsedConfigPerDevice {
     pub pci: PCI::BUS_INFO,
-    pub device_name: Option<String>,
+    pub _device_name: Option<String>,
     pub default_power_cap_watt: Option<u32>,
     pub default_perf_level: DpmForcedLevel,
     pub default_profile: PowerProfile,
@@ -39,7 +39,7 @@ pub struct Config {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConfigPerDevice {
     pub pci: String,
-    pub device_name: Option<String>,
+    pub _device_name: Option<String>,
     pub default_power_cap_watt: Option<u32>,
     pub default_perf_level: Option<String>,
     pub default_profile: Option<String>,
@@ -125,7 +125,7 @@ impl ConfigPerDevice {
 
         Ok(ParsedConfigPerDevice {
             pci,
-            device_name: None,
+            _device_name: None,
             default_power_cap_watt: None,
             default_perf_level,
             default_profile,
