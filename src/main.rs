@@ -64,6 +64,7 @@ fn main() {
                     let add_config_device = ConfigPerDevice {
                         pci: pci.to_string(),
                         device_name: None,
+                        default_power_cap_watt: None,
                         default_perf_level: None,
                         default_profile: None,
                         entries: vec![entry],

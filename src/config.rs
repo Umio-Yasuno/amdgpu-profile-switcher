@@ -11,6 +11,7 @@ pub struct ParsedConfig {
 pub struct ParsedConfigPerDevice {
     pub pci: PCI::BUS_INFO,
     pub device_name: Option<String>,
+    pub default_power_cap_watt: Option<u32>,
     pub default_perf_level: DpmForcedLevel,
     pub default_profile: PowerProfile,
     pub entries: Vec<ParsedConfigEntry>,
@@ -38,6 +39,7 @@ pub struct Config {
 pub struct ConfigPerDevice {
     pub pci: String,
     pub device_name: Option<String>,
+    pub default_power_cap_watt: Option<u32>,
     pub default_perf_level: Option<String>,
     pub default_profile: Option<String>,
     pub entries: Vec<ConfigEntry>,
@@ -119,7 +121,14 @@ impl ConfigPerDevice {
         let default_profile = self.parse_default_power_profile()?;
         let entries: Result<Vec<ParsedConfigEntry>, ParseConfigError> = self.entries.iter().map(|entry| entry.parse()).collect();
 
-        Ok(ParsedConfigPerDevice { pci, device_name: None, default_perf_level, default_profile, entries: entries? })
+        Ok(ParsedConfigPerDevice {
+            pci,
+            device_name: None,
+            default_power_cap_watt: None,
+            default_perf_level,
+            default_profile,
+            entries: entries?,
+        })
     }
 }
 

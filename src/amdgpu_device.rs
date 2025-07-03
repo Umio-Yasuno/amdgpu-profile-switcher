@@ -7,11 +7,13 @@ use libdrm_amdgpu_sys::AMDGPU::{self, PowerProfile};
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
     pub sysfs_path: PathBuf,
+    pub hwmon_path: PathBuf,
     pub device_id: u32,
     pub revision_id: u32,
     pub device_name: String,
     pub power_profile_path: PathBuf,
     pub dpm_perf_level_path: PathBuf,
+    pub default_power_cap_watt: Option<u32>,
 }
 
 impl AmdgpuDevice {
@@ -35,15 +37,23 @@ impl AmdgpuDevice {
         };
         let device_name = AMDGPU::find_device_name(device_id, revision_id)
             .unwrap_or(AMDGPU::DEFAULT_DEVICE_NAME.to_string());
+        let hwmon_path = pci_bus.get_hwmon_path()?;
+        let power_cap_path = hwmon_path.join("power1_cap_default");
+        let default_power_cap_watt = std::fs::read_to_string(power_cap_path)
+            .ok()
+            .and_then(|s| s.trim_end().parse::<u32>().ok())
+            .and_then(|v| v.checked_div(1_000_000));
 
         Some(Self {
             pci_bus,
             sysfs_path,
+            hwmon_path,
             device_id,
             revision_id,
             device_name,
             power_profile_path,
             dpm_perf_level_path,
+            default_power_cap_watt,
         })
     }
 
