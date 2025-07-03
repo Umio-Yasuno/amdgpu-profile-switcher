@@ -263,6 +263,14 @@ fn main() {
                         app.amdgpu_device.pci_bus,
                     );
                 }
+                if let Some(power_cap_watt) = apply_config.power_cap_watt {
+                    app.set_power_cap(power_cap_watt);
+                    debug!(
+                        "Apply {power_cap_watt}W cap. to {} ({})",
+                        app.amdgpu_device.device_name,
+                        app.amdgpu_device.pci_bus,
+                    );
+                }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
