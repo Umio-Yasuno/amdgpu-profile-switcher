@@ -49,7 +49,7 @@ impl AppDevice {
     }
 
     pub fn set_default_power_cap(&self) {
-        let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap_default");
+        let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap");
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
             else { return };
         let Some(current_power_cap_watt) = std::fs::read_to_string(power_cap_path)
