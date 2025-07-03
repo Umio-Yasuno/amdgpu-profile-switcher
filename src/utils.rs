@@ -201,7 +201,9 @@ pub fn generate_config() -> ron::Result<String> {
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
                 _device_name: Some(dev.device_name),
-                default_power_cap_watt: dev.default_power_cap_watt,
+                default_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.default),
+                _min_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.min),
+                _max_power_cap_watt: dev.power_cap.as_ref().map(|cap| cap.max),
                 default_perf_level: None,
                 default_profile: None,
                 entries: vec![entry.clone()],

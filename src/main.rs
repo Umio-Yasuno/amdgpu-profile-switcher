@@ -65,6 +65,8 @@ fn main() {
                         pci: pci.to_string(),
                         _device_name: None,
                         default_power_cap_watt: None,
+                        _min_power_cap_watt: None,
+                        _max_power_cap_watt: None,
                         default_perf_level: None,
                         default_profile: None,
                         entries: vec![entry],
@@ -188,9 +190,9 @@ fn main() {
             app.config_device.default_perf_level,
             app.config_device.default_profile,
         );
-        app.set_default_perf_level();
-        app.set_default_power_profile();
-        app.set_default_power_cap();
+        let _ = app.set_default_perf_level();
+        let _ = app.set_default_power_profile();
+        let _ = app.set_default_power_cap();
     }
 
     let modified = utils::watch_config_file(&config_path);
@@ -260,7 +262,7 @@ fn main() {
             if let Some(apply_config) = &apply_config_entry {
                 debug!("target process: {}", apply_config.name);
                 if let Some(perf_level) = apply_config.perf_level {
-                    app.set_perf_level(perf_level);
+                    let _ = app.set_perf_level(perf_level);
                     debug!(
                         "Apply {perf_level:?} to {} ({})",
                         app.amdgpu_device.device_name,
@@ -268,7 +270,7 @@ fn main() {
                     );
                 }
                 if let Some(profile) = apply_config.profile {
-                    app.set_power_profile(profile);
+                    let _ = app.set_power_profile(profile);
                     debug!(
                         "Apply {profile:?} to {} ({})",
                         app.amdgpu_device.device_name,
@@ -276,7 +278,7 @@ fn main() {
                     );
                 }
                 if let Some(power_cap_watt) = apply_config.power_cap_watt {
-                    app.set_power_cap(power_cap_watt);
+                    let _ = app.set_power_cap(power_cap_watt);
                     debug!(
                         "Apply {power_cap_watt}W cap. to {} ({})",
                         app.amdgpu_device.device_name,
@@ -290,8 +292,9 @@ fn main() {
                     app.config_device.default_perf_level,
                     app.config_device.default_profile,
                 );
-                app.set_default_perf_level();
-                app.set_default_power_profile();
+                let _ = app.set_default_perf_level();
+                let _ = app.set_default_power_profile();
+                let _ = app.set_default_power_cap();
                 app.cache_pid = None;
             }
         }
