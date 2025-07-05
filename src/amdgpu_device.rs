@@ -16,7 +16,8 @@ pub struct AmdgpuDevice {
     pub power_cap: Option<PowerCap>,
     pub fan_target_temperature: Option<FanTargetTemp>,
     pub fan_minimum_pwm: Option<FanMinPwm>,
-    pub vddgfx_offset: Option<VddgfxOffset>,
+    pub sclk_offset: Option<SclkOffset>, // RDNA 4
+    pub vddgfx_offset: Option<VddgfxOffset>, // RDNA 2/3/4
 }
 
 impl AmdgpuDevice {
@@ -44,7 +45,12 @@ impl AmdgpuDevice {
         let power_cap = PowerCap::from_hwmon_path(&hwmon_path);
         let fan_target_temperature = FanTargetTemp::from_sysfs_path(&sysfs_path);
         let fan_minimum_pwm = FanMinPwm::from_sysfs_path(&sysfs_path);
-        let vddgfx_offset = VddgfxOffset::from_sysfs_path(&sysfs_path);
+        let pp_od_clk_voltage = std::fs::read_to_string(sysfs_path.join("pp_od_clk_voltage"));
+        let (sclk_offset, vddgfx_offset) = if let Ok(s) = pp_od_clk_voltage {
+            (SclkOffset::from_str(&s), VddgfxOffset::from_str(&s))
+        } else {
+            (None, None)
+        };
 
         Some(Self {
             pci_bus,
@@ -58,6 +64,7 @@ impl AmdgpuDevice {
             power_cap,
             fan_target_temperature,
             fan_minimum_pwm,
+            sclk_offset,
             vddgfx_offset,
         })
     }
@@ -76,19 +83,61 @@ impl AmdgpuDevice {
 }
 
 #[derive(Debug, Clone)]
+pub struct SclkOffset {
+    pub current: i32,
+    pub range: Option<[i32; 2]>,
+}
+
+impl SclkOffset {
+    pub fn from_str(s: &str) -> Option<Self> {
+        fn parse_mhz(s: &str) -> Option<i32> {
+            let len = s.len();
+            s.get(..len-3)?.parse::<i32>().ok()
+        }
+
+        let mut lines = s.lines();
+        let _ = lines.find(|l| l.ends_with("OD_SCLK_OFFSET:"))?;
+        let current = lines.next().and_then(parse_mhz)?;
+        let s_range = lines.find(|l| l.starts_with("SCLK_OFFSET:"))?;
+        let range = {
+            let mut split = s_range
+                .trim_start_matches("SCLK_OFFSET:")
+                .split_whitespace();
+            if let [Some(min), Some(max)] = [split.next(), split.next()]
+                .map(|v| v.and_then(parse_mhz))
+            {
+                Some([min, max])
+            } else {
+                None
+            }
+        };
+
+        Some(Self {
+            current,
+            range,
+        })
+    }
+
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
+
+        Self::from_str(&s)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct VddgfxOffset {
     pub current: i32,
     pub range: Option<[i32; 2]>,
 }
 
 impl VddgfxOffset {
-    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+    pub fn from_str(s: &str) -> Option<Self> {
         fn parse_mv(s: &str) -> Option<i32> {
             let len = s.len();
             s.get(..len-2)?.parse::<i32>().ok()
         }
 
-        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
         let mut lines = s.lines();
         let _ = lines.find(|l| l.ends_with("OD_VDDGFX_OFFSET:"))?;
         let current = lines.next().and_then(parse_mv)?;
@@ -110,6 +159,12 @@ impl VddgfxOffset {
             current,
             range,
         })
+    }
+
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
+
+        Self::from_str(&s)
     }
 }
 
