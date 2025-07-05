@@ -16,6 +16,7 @@ pub struct AmdgpuDevice {
     pub power_cap: Option<PowerCap>,
     pub fan_target_temperature: Option<FanTargetTemp>,
     pub fan_minimum_pwm: Option<FanMinPwm>,
+    pub vddgfx_offset: Option<VddgfxOffset>,
 }
 
 impl AmdgpuDevice {
@@ -43,6 +44,7 @@ impl AmdgpuDevice {
         let power_cap = PowerCap::from_hwmon_path(&hwmon_path);
         let fan_target_temperature = FanTargetTemp::from_sysfs_path(&sysfs_path);
         let fan_minimum_pwm = FanMinPwm::from_sysfs_path(&sysfs_path);
+        let vddgfx_offset = VddgfxOffset::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
@@ -56,6 +58,7 @@ impl AmdgpuDevice {
             power_cap,
             fan_target_temperature,
             fan_minimum_pwm,
+            vddgfx_offset,
         })
     }
 
@@ -69,6 +72,44 @@ impl AmdgpuDevice {
 
     pub fn get_all_supported_power_profile(&self) -> Vec<PowerProfile> {
         PowerProfile::get_all_supported_profiles_from_sysfs(&self.sysfs_path)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VddgfxOffset {
+    pub current: i32,
+    pub range: Option<[i32; 2]>,
+}
+
+impl VddgfxOffset {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        fn parse_mv(s: &str) -> Option<i32> {
+            let len = s.len();
+            s.get(..len-2)?.parse::<i32>().ok()
+        }
+
+        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
+        let mut lines = s.lines();
+        let _ = lines.find(|l| l.ends_with("OD_VDDGFX_OFFSET:"))?;
+        let current = lines.next().and_then(parse_mv)?;
+        let s_range = lines.find(|l| l.starts_with("VDDGFX_OFFSET:"))?;
+        let range = {
+            let mut split = s_range
+                .trim_start_matches("VDDGFX_OFFSET:")
+                .split_whitespace();
+            if let [Some(min), Some(max)] = [split.next(), split.next()]
+                .map(|v| v.and_then(parse_mv))
+            {
+                Some([min, max])
+            } else {
+                None
+            }
+        };
+
+        Some(Self {
+            current,
+            range,
+        })
     }
 }
 
