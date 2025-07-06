@@ -16,6 +16,8 @@ pub struct ParsedConfigPerDevice {
     pub default_profile: PowerProfile,
     pub default_fan_target_temperature: Option<u32>,
     pub default_fan_minimum_pwm: Option<u32>,
+    pub sclk_offset: Option<i32>,
+    pub vddgfx_offset: Option<i32>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -52,6 +54,10 @@ pub struct ConfigPerDevice {
     pub _fan_target_temperature_range: Option<[u32; 2]>,
     pub default_fan_minimum_pwm: Option<u32>,
     pub _fan_minimum_pwm_range: Option<[u32; 2]>,
+    pub sclk_offset: Option<i32>,
+    pub _sclk_offset_range: Option<[i32; 2]>,
+    pub vddgfx_offset: Option<i32>,
+    pub _vddgfx_offset_range: Option<[i32; 2]>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -142,6 +148,8 @@ impl ConfigPerDevice {
             default_profile,
             default_fan_target_temperature: self.default_fan_target_temperature,
             default_fan_minimum_pwm: self.default_fan_minimum_pwm,
+            sclk_offset: self.sclk_offset,
+            vddgfx_offset: self.vddgfx_offset,
             entries: entries?,
         })
     }

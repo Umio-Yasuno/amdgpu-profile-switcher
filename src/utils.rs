@@ -223,6 +223,22 @@ pub fn generate_config() -> ron::Result<String> {
                 .fan_minimum_pwm
                 .as_ref()
                 .map(|fan| fan.pwm_range);
+            let sclk_offset = dev
+                .sclk_offset
+                .as_ref()
+                .map(|sclk| sclk.current);
+            let _sclk_offset_range = dev
+                .sclk_offset
+                .as_ref()
+                .and_then(|sclk| sclk.range);
+            let vddgfx_offset = dev
+                .vddgfx_offset
+                .as_ref()
+                .map(|vddgfx| vddgfx.current);
+            let _vddgfx_offset_range = dev
+                .vddgfx_offset
+                .as_ref()
+                .and_then(|vddgfx| vddgfx.range);
 
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
@@ -235,6 +251,10 @@ pub fn generate_config() -> ron::Result<String> {
                 _fan_target_temperature_range,
                 default_fan_minimum_pwm,
                 _fan_minimum_pwm_range,
+                sclk_offset,
+                _sclk_offset_range,
+                vddgfx_offset,
+                _vddgfx_offset_range,
                 entries: vec![entry.clone()],
             })
         })

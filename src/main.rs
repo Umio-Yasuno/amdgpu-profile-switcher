@@ -76,6 +76,10 @@ fn main() {
                         _fan_target_temperature_range: None,
                         default_fan_minimum_pwm: None,
                         _fan_minimum_pwm_range: None,
+                        sclk_offset: None,
+                        _sclk_offset_range: None,
+                        vddgfx_offset: None,
+                        _vddgfx_offset_range: None,
                         entries: vec![entry],
                     };
 

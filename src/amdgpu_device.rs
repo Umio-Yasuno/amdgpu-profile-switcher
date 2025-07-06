@@ -69,6 +69,17 @@ impl AmdgpuDevice {
         })
     }
 
+    pub fn _update(&mut self) {
+        self.power_cap = PowerCap::from_hwmon_path(&self.hwmon_path);
+        self.fan_target_temperature = FanTargetTemp::from_sysfs_path(&self.sysfs_path);
+        self.fan_minimum_pwm = FanMinPwm::from_sysfs_path(&self.sysfs_path);
+        let pp_od_clk_voltage = std::fs::read_to_string(self.sysfs_path.join("pp_od_clk_voltage"));
+        if let Ok(s) = pp_od_clk_voltage {
+            self.sclk_offset = SclkOffset::from_str(&s);
+            self.vddgfx_offset = VddgfxOffset::from_str(&s);
+        }
+    }
+
     pub fn check_permissions(&self) -> bool {
         [&self.power_profile_path, &self.dpm_perf_level_path]
             .iter()
