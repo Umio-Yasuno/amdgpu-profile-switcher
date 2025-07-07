@@ -127,6 +127,22 @@ impl AppDevice {
         Self::commit(&mut file)
     }
 
+    pub fn set_vddgfx_offset(&self) -> io::Result<()> {
+        if self.amdgpu_device.vddgfx_offset.is_none() {
+            return Ok(());
+        }
+
+        let Some(vo) = self.config_device.vddgfx_offset else { return Ok(()) };
+        let path = self.pp_od_clk_voltage_path();
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)?;
+        let vo = format!("vo {vo} ");
+        file.write_all(vo.as_bytes())?;
+        Self::commit(&mut file)
+    }
+
     fn pp_od_clk_voltage_path(&self) -> PathBuf {
         self.amdgpu_device.sysfs_path.join("pp_od_clk_voltage")
     }
