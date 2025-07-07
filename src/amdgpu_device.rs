@@ -129,7 +129,7 @@ impl SclkOffset {
         })
     }
 
-    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+    pub fn _from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
 
         Self::from_str(&s)
@@ -172,7 +172,7 @@ impl VddgfxOffset {
         })
     }
 
-    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+    pub fn _from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
 
         Self::from_str(&s)
@@ -187,12 +187,12 @@ pub struct FanTargetTemp {
 
 impl FanTargetTemp {
     pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
-        let mut target_temp: Option<u32> = None;
-        let mut temp_range: Option<[u32; 2]> = None;
+        let target_temp: Option<u32>;
+        let temp_range: Option<[u32; 2]>;
 
         {
             let path = path.into().join("gpu_od/fan_ctrl/fan_target_temperature");
-            let mut s = std::fs::read_to_string(path).ok()?;
+            let s = std::fs::read_to_string(path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("FAN_TARGET_TEMPERATURE:"));
@@ -223,12 +223,12 @@ pub struct FanMinPwm {
 
 impl FanMinPwm {
     pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
-        let mut minimum_pwm: Option<u32> = None;
-        let mut pwm_range: Option<[u32; 2]> = None;
+        let minimum_pwm: Option<u32>;
+        let pwm_range: Option<[u32; 2]>;
 
         {
             let path = path.into().join("gpu_od/fan_ctrl/fan_minimum_pwm");
-            let mut s = std::fs::read_to_string(path).ok()?;
+            let s = std::fs::read_to_string(path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("FAN_MINIMUM_PWM:"));

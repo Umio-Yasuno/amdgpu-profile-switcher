@@ -82,7 +82,7 @@ impl AppDevice {
             .open(&fan_target_temp_path)?;
         let target_temp = format!("{target_temp} ");
         file.write_all(target_temp.as_bytes())?;
-        file.write_all(b"c")
+        Self::commit(&mut file)
     }
 
     pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
@@ -102,13 +102,17 @@ impl AppDevice {
             .open(&fan_minimum_pwm_path)?;
         let minimum_pwm = format!("{minimum_pwm} ");
         file.write_all(minimum_pwm.as_bytes())?;
-        file.write_all(b"c")
+        Self::commit(&mut file)
     }
 
     pub fn set_default_fan_minimum_pwm(&self) -> io::Result<()> {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
             else { return Err(io::Error::other("fan_minimum_pwm is None")) };
         self.set_fan_minimum_pwm(minimum_pwm)
+    }
+
+    fn commit(file: &mut fs::File) -> io::Result<()> {
+        file.write_all(b"c")
     }
 
     pub fn name_list(&self) -> Vec<String> {
