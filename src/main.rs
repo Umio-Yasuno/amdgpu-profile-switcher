@@ -211,6 +211,7 @@ fn main() {
         let _ = app.set_default_power_cap();
         let _ = app.set_default_fan_target_temp();
         let _ = app.set_default_fan_minimum_pwm();
+        let _ = app.set_sclk_offset();
     }
 
     let modified = utils::watch_config_file(&config_path);

@@ -1,4 +1,4 @@
-use std::{fs, io::{self, Write}};
+use std::{fs, io::{self, Write}, path::PathBuf};
 
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
@@ -109,6 +109,26 @@ impl AppDevice {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
             else { return Err(io::Error::other("fan_minimum_pwm is None")) };
         self.set_fan_minimum_pwm(minimum_pwm)
+    }
+
+    pub fn set_sclk_offset(&self) -> io::Result<()> {
+        if self.amdgpu_device.sclk_offset.is_none() {
+            return Ok(());
+        }
+
+        let Some(so) = self.config_device.sclk_offset else { return Ok(()) };
+        let path = self.pp_od_clk_voltage_path();
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)?;
+        let so = format!("s {so} ");
+        file.write_all(so.as_bytes())?;
+        Self::commit(&mut file)
+    }
+
+    fn pp_od_clk_voltage_path(&self) -> PathBuf {
+        self.amdgpu_device.sysfs_path.join("pp_od_clk_voltage")
     }
 
     fn commit(file: &mut fs::File) -> io::Result<()> {
