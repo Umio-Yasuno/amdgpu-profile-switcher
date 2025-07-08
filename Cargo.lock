@@ -80,7 +80,7 @@ dependencies = [
 [[package]]
 name = "proc_prog_name"
 version = "0.1.1"
-source = "git+https://github.com/Umio-Yasuno/proc_prog_name#84237b0b08fe1678b837dccc6caa2362847b10bd"
+source = "git+https://github.com/Umio-Yasuno/proc_prog_name?rev=f2d1d139ec48639b5c708d3b0dde6d540c22d5bd#f2d1d139ec48639b5c708d3b0dde6d540c22d5bd"
 
 [[package]]
 name = "quote"
