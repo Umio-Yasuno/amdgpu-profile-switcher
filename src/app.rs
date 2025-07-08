@@ -1,5 +1,7 @@
 use std::{fs, io::{self, Write}, path::PathBuf};
 
+use log::debug;
+
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
 
@@ -25,6 +27,11 @@ impl AppDevice {
         let current_perf_level = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)?;
 
         if current_perf_level != perf_level {
+            debug!(
+                "set default perf_level ({perf_level:?}) to {} ({})",
+                self.amdgpu_device.device_name,
+                self.amdgpu_device.pci_bus,
+            );
             fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level.to_arg())
         } else {
             Ok(())
@@ -43,6 +50,11 @@ impl AppDevice {
 
         if current_profile != profile {
             let profile = (profile as u32).to_string();
+            debug!(
+                "set default profile ({profile:?}) to {} ({})",
+                self.amdgpu_device.device_name,
+                self.amdgpu_device.pci_bus,
+            );
             fs::write(&self.amdgpu_device.power_profile_path, profile)
         } else {
             Ok(())
@@ -68,6 +80,13 @@ impl AppDevice {
     pub fn set_default_power_cap(&self) -> io::Result<()> {
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
             else { return Err(io::Error::other(IO_ERROR_POWER_CAP)) };
+
+        debug!(
+            "set default power cap. ({target_power_cap_watt}W) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
         self.set_power_cap(target_power_cap_watt)
     }
 
@@ -88,6 +107,13 @@ impl AppDevice {
     pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
         let Some(target_temp) = self.config_device.default_fan_target_temperature
             else { return Err(io::Error::other("fan_target_temperature is None")) };
+
+        debug!(
+            "set default fan_target_temperature ({target_temp}C) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
         self.set_fan_target_temp(target_temp)
     }
 
@@ -108,6 +134,13 @@ impl AppDevice {
     pub fn set_default_fan_minimum_pwm(&self) -> io::Result<()> {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
             else { return Err(io::Error::other("fan_minimum_pwm is None")) };
+
+        debug!(
+            "set default fan_minimum_pwm ({minimum_pwm}%) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
         self.set_fan_minimum_pwm(minimum_pwm)
     }
 
@@ -123,6 +156,13 @@ impl AppDevice {
             .write(true)
             .open(&path)?;
         let so = format!("s {so} ");
+
+        debug!(
+            "set sclk_offset ({so}MHz) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
         file.write_all(so.as_bytes())?;
         Self::commit(&mut file)
     }
@@ -139,6 +179,13 @@ impl AppDevice {
             .write(true)
             .open(&path)?;
         let vo = format!("vo {vo} ");
+
+        debug!(
+            "set vddgfx_offset ({vo}mV) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
         file.write_all(vo.as_bytes())?;
         Self::commit(&mut file)
     }

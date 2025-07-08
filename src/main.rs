@@ -196,18 +196,9 @@ fn main() {
         if !app.amdgpu_device.check_permissions() {
             panic!("Error: PermissionDenied for sysfs");
         }
-        debug!(
-            "set default perf_level ({:?}) and power_profile ({:?})",
-            app.config_device.default_perf_level,
-            app.config_device.default_profile,
-        );
+
         let _ = app.set_default_perf_level();
         let _ = app.set_default_power_profile();
-        debug!(
-            "set default power cap. ({:?}) and fan_target_temperature ({:?})",
-            app.config_device.default_power_cap_watt,
-            app.config_device.default_fan_target_temperature,
-        );
         let _ = app.set_default_power_cap();
         let _ = app.set_default_fan_target_temp();
         let _ = app.set_default_fan_minimum_pwm();
