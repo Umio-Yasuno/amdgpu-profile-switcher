@@ -110,6 +110,11 @@ pub fn load_config(config_path: &Path) -> ParsedConfig {
                         .find(|(_i, l)| l.contains(invalid_profile))
                         .map(|(i, _l)| i);
                 },
+                ParseConfigError::InvalidPci(ref pci) => {
+                    line_number = lines
+                        .find(|(_i, l)| l.contains(pci))
+                        .map(|(i, _l)| i);
+                }
                 _ => {},
             }
 
