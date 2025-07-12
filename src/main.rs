@@ -186,7 +186,11 @@ fn main() {
     for app in &app_devices {
         'wait: loop {
             if !app.check_if_device_is_active() {
-                debug!("wait until the device is active...");
+                debug!(
+                    "wait until {} ({}) is active...",
+                    app.amdgpu_device.device_name,
+                    app.amdgpu_device.pci_bus,
+                );
                 std::thread::sleep(std::time::Duration::from_secs(1));
             } else {
                 break 'wait;
@@ -197,13 +201,16 @@ fn main() {
             panic!("Error: PermissionDenied for sysfs");
         }
 
-        let _ = app.set_default_perf_level();
-        let _ = app.set_default_power_profile();
-        let _ = app.set_default_power_cap();
-        let _ = app.set_default_fan_target_temp();
-        let _ = app.set_default_fan_minimum_pwm();
-        let _ = app.set_sclk_offset();
-        let _ = app.set_vddgfx_offset();
+        let res: std::io::Result<Vec<_>> = [
+            app.set_default_perf_level(),
+            app.set_default_power_profile(),
+            app.set_default_power_cap(),
+            app.set_default_fan_target_temp(),
+            app.set_default_fan_minimum_pwm(),
+            app.set_sclk_offset(),
+            app.set_vddgfx_offset(),
+        ].into_iter().collect();
+        res.unwrap();
     }
 
     let modified = utils::watch_config_file(&config_path);
