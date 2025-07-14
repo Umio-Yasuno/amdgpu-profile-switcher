@@ -157,7 +157,7 @@ impl AppDevice {
         let fan_zero_rpm_path = self
             .amdgpu_device
             .sysfs_path
-            .join("gpu_od/fan_ctrl/fan_zero_rpm_enabled");
+            .join("gpu_od/fan_ctrl/fan_zero_rpm_enable");
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
