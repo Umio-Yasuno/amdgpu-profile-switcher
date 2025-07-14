@@ -80,6 +80,7 @@ fn main() {
                         _sclk_offset_range: None,
                         vddgfx_offset: None,
                         _vddgfx_offset_range: None,
+                        fan_zero_rpm: None,
                         entries: vec![entry],
                     };
 

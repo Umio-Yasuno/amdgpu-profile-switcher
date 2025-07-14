@@ -18,6 +18,7 @@ pub struct ParsedConfigPerDevice {
     pub default_fan_minimum_pwm: Option<u32>,
     pub sclk_offset: Option<i32>,
     pub vddgfx_offset: Option<i32>,
+    pub fan_zero_rpm: Option<bool>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -58,6 +59,7 @@ pub struct ConfigPerDevice {
     pub _sclk_offset_range: Option<[i32; 2]>,
     pub vddgfx_offset: Option<i32>,
     pub _vddgfx_offset_range: Option<[i32; 2]>,
+    pub fan_zero_rpm: Option<bool>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -150,6 +152,7 @@ impl ConfigPerDevice {
             default_fan_minimum_pwm: self.default_fan_minimum_pwm,
             sclk_offset: self.sclk_offset,
             vddgfx_offset: self.vddgfx_offset,
+            fan_zero_rpm: self.fan_zero_rpm,
             entries: entries?,
         })
     }

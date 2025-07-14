@@ -18,6 +18,7 @@ pub struct AmdgpuDevice {
     pub fan_minimum_pwm: Option<FanMinPwm>,
     pub sclk_offset: Option<SclkOffset>, // RDNA 4
     pub vddgfx_offset: Option<VddgfxOffset>, // RDNA 2/3/4
+    pub fan_zero_rpm: Option<bool>,
 }
 
 impl AmdgpuDevice {
@@ -51,6 +52,7 @@ impl AmdgpuDevice {
         } else {
             (None, None)
         };
+        let fan_zero_rpm = FanZeroRpm::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
@@ -66,6 +68,7 @@ impl AmdgpuDevice {
             fan_minimum_pwm,
             sclk_offset,
             vddgfx_offset,
+            fan_zero_rpm,
         })
     }
 
@@ -90,6 +93,26 @@ impl AmdgpuDevice {
 
     pub fn get_all_supported_power_profile(&self) -> Vec<PowerProfile> {
         PowerProfile::get_all_supported_profiles_from_sysfs(&self.sysfs_path)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FanZeroRpm;
+
+impl FanZeroRpm {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<bool> {
+        let current: bool;
+
+        {
+            let path = path.into().join("gpu_od/fan_ctrl/fan_zero_rpm_enable");
+            let s = std::fs::read_to_string(path).ok()?;
+            let mut lines = s.lines();
+
+            lines.find(|l| l.starts_with("FAN_ZERO_RPM_ENABLE:"));
+            current = lines.next()? == "1";
+        }
+
+        Some(current)
     }
 }
 

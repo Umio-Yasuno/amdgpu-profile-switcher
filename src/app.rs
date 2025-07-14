@@ -79,7 +79,7 @@ impl AppDevice {
 
     pub fn set_default_power_cap(&self) -> io::Result<()> {
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
-            else { return Err(io::Error::other(IO_ERROR_POWER_CAP)) };
+            else { return Ok(()) };
 
         debug!(
             "set default power cap. ({target_power_cap_watt}W) to {} ({})",
@@ -106,7 +106,7 @@ impl AppDevice {
 
     pub fn set_default_fan_target_temp(&self) -> io::Result<()> {
         let Some(target_temp) = self.config_device.default_fan_target_temperature
-            else { return Err(io::Error::other("fan_target_temperature is None")) };
+            else { return Ok(()) };
 
         debug!(
             "set default fan_target_temperature ({target_temp}C) to {} ({})",
@@ -133,7 +133,7 @@ impl AppDevice {
 
     pub fn set_default_fan_minimum_pwm(&self) -> io::Result<()> {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
-            else { return Err(io::Error::other("fan_minimum_pwm is None")) };
+            else { return Ok(()) };
 
         debug!(
             "set default fan_minimum_pwm ({minimum_pwm}%) to {} ({})",
@@ -142,6 +142,30 @@ impl AppDevice {
         );
 
         self.set_fan_minimum_pwm(minimum_pwm)
+    }
+
+    pub fn set_default_fan_zero_rpm(&self) -> io::Result<()> {
+        let Some(fan_zero_rpm) = self.config_device.fan_zero_rpm
+            else { return Ok(()) };
+
+        debug!(
+            "set default fan_zero_rpm ({fan_zero_rpm}) to {} ({})",
+            self.amdgpu_device.device_name,
+            self.amdgpu_device.pci_bus,
+        );
+
+        let fan_zero_rpm_path = self
+            .amdgpu_device
+            .sysfs_path
+            .join("gpu_od/fan_ctrl/fan_zero_rpm_enabled");
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&fan_zero_rpm_path)?;
+        let fan_zero_rpm = if fan_zero_rpm { 1 } else { 0 };
+        let fan_zero_rpm = format!("{fan_zero_rpm} ");
+        file.write_all(fan_zero_rpm.as_bytes())?;
+        Self::commit(&mut file)
     }
 
     pub fn set_sclk_offset(&self) -> io::Result<()> {

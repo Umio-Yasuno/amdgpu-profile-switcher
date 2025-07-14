@@ -260,6 +260,7 @@ pub fn generate_config() -> ron::Result<String> {
                 _sclk_offset_range,
                 vddgfx_offset,
                 _vddgfx_offset_range,
+                fan_zero_rpm: dev.fan_zero_rpm,
                 entries: vec![entry.clone()],
             })
         })
