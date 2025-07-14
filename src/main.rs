@@ -208,9 +208,11 @@ fn main() {
             app.set_default_power_cap(),
             app.set_default_fan_target_temp(),
             app.set_default_fan_minimum_pwm(),
+            app.set_fan_zero_rpm(),
             app.set_sclk_offset(),
             app.set_vddgfx_offset(),
         ].into_iter().collect();
+
         res.unwrap();
     }
 

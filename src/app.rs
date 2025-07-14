@@ -144,12 +144,12 @@ impl AppDevice {
         self.set_fan_minimum_pwm(minimum_pwm)
     }
 
-    pub fn set_default_fan_zero_rpm(&self) -> io::Result<()> {
+    pub fn set_fan_zero_rpm(&self) -> io::Result<()> {
         let Some(fan_zero_rpm) = self.config_device.fan_zero_rpm
             else { return Ok(()) };
 
         debug!(
-            "set default fan_zero_rpm ({fan_zero_rpm}) to {} ({})",
+            "set fan_zero_rpm ({fan_zero_rpm}) to {} ({})",
             self.amdgpu_device.device_name,
             self.amdgpu_device.pci_bus,
         );
