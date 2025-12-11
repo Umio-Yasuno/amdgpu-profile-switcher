@@ -7,6 +7,7 @@ use libdrm_amdgpu_sys::AMDGPU::{self, PowerCap, PowerProfile};
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
     pub sysfs_path: PathBuf,
+    pub debug_path: PathBuf,
     pub hwmon_path: PathBuf,
     pub device_id: u32,
     pub revision_id: u32,
@@ -24,6 +25,7 @@ pub struct AmdgpuDevice {
 impl AmdgpuDevice {
     pub fn get_from_pci_bus(pci_bus: PCI::BUS_INFO) -> Option<Self> {
         let sysfs_path = pci_bus.get_sysfs_path();
+        let debug_path = pci_bus.get_debug_dri_path().ok()?;
         let power_profile_path = sysfs_path.join("pp_power_profile_mode");
         let dpm_perf_level_path = sysfs_path.join("power_dpm_force_performance_level");
 
@@ -57,6 +59,7 @@ impl AmdgpuDevice {
         Some(Self {
             pci_bus,
             sysfs_path,
+            debug_path,
             hwmon_path,
             device_id,
             revision_id,
