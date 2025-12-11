@@ -26,6 +26,17 @@ impl ParsedConfigPerDevice {
     pub fn names(&self) -> Vec<String> {
         self.entries.iter().map(|e| e.name.clone()).collect()
     }
+
+    pub fn is_default_changed(&self, new: &Self) -> bool {
+        self.default_power_cap_watt != new.default_power_cap_watt
+        || self.default_perf_level != new.default_perf_level
+        || self.default_profile != new.default_profile
+        || self.default_fan_target_temperature != new.default_fan_target_temperature
+        || self.default_fan_minimum_pwm != new.default_fan_minimum_pwm
+        || self.sclk_offset != new.sclk_offset
+        || self.vddgfx_offset != new.vddgfx_offset
+        || self.fan_zero_rpm != new.fan_zero_rpm
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -134,9 +145,11 @@ impl ConfigPerDevice {
 
         let pci: PCI::BUS_INFO = self.pci.parse().map_err(|_| ParseConfigError::InvalidPci(self.pci.to_string()))?;
 
+        /*
         if self.entries.is_empty() {
             eprintln!("`entries` for {pci} is empty.");
         }
+        */
 
         let default_perf_level = self.parse_default_perf_level()?;
         let default_profile = self.parse_default_power_profile()?;

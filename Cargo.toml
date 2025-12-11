@@ -10,7 +10,7 @@ repository = "https://github.com/Umio-Yasuno/amdgpu-profile-switcher"
 
 [dependencies]
 env_logger = { version = "0.11", default-features = false }
-libdrm_amdgpu_sys = { git = "https://github.com/Umio-Yasuno/libdrm-amdgpu-sys-rs", default-features = false }
+libdrm_amdgpu_sys = { git = "https://github.com/Umio-Yasuno/libdrm-amdgpu-sys-rs", default-features = false, rev = "20d8a88c850775e5072f0913df1a382c9dd9fa2b" }
 log = "0.4"
 proc_prog_name = { git = "https://github.com/Umio-Yasuno/proc_prog_name", rev = "f2d1d139ec48639b5c708d3b0dde6d540c22d5bd" }
 ron = "0.12"

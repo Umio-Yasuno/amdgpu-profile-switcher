@@ -119,7 +119,7 @@ impl FanZeroRpm {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SclkOffset {
     pub current: i32,
     pub range: Option<[i32; 2]>,
@@ -162,7 +162,7 @@ impl SclkOffset {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VddgfxOffset {
     pub current: i32,
     pub range: Option<[i32; 2]>,
@@ -205,7 +205,7 @@ impl VddgfxOffset {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FanTargetTemp {
     pub target_temp: u32,
     pub temp_range: [u32; 2],
@@ -241,7 +241,7 @@ impl FanTargetTemp {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FanMinPwm {
     pub minimum_pwm: u32,
     pub pwm_range: [u32; 2],

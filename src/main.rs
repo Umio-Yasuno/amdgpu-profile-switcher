@@ -235,7 +235,27 @@ fn main() {
                     .iter_mut()
                     .find(|app| app.amdgpu_device.pci_bus == config_device.pci)
                 {
+                    let changed = app.config_device.is_default_changed(config_device);
                     app.config_device.clone_from(config_device);
+
+                    if changed {
+                        debug!(
+                            "{} ({}):re-aplly default config",
+                            app.amdgpu_device.device_name,
+                            app.amdgpu_device.pci_bus,
+                        );
+
+                        let _: std::io::Result<Vec<_>> = [
+                            app.set_default_perf_level(),
+                            app.set_default_power_profile(),
+                            app.set_default_power_cap(),
+                            app.set_default_fan_target_temp(),
+                            app.set_default_fan_minimum_pwm(),
+                            app.set_fan_zero_rpm(),
+                            app.set_sclk_offset(),
+                            app.set_vddgfx_offset(),
+                        ].into_iter().collect();
+                    }
                 } else if let Some(pci) = pci_devs.iter().find(|&pci_dev| pci_dev == &config_device.pci) {
                     let new_app = AppDevice {
                         amdgpu_device: AmdgpuDevice::get_from_pci_bus(*pci).unwrap(),
