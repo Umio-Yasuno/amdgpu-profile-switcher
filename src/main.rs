@@ -254,7 +254,9 @@ fn main() {
             modified.store(false, Ordering::Release);
         }
 
-        ProcProgEntry::update_entries_with_name_filter(&mut procs, &name_list);
+        if !name_list.is_empty() {
+            ProcProgEntry::update_entries_with_name_filter(&mut procs, &name_list);
+        }
 
         'device: for app in app_devices.iter_mut() {
             if app.config_device.entries.is_empty() {
