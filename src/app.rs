@@ -27,11 +27,7 @@ impl AppDevice {
         let current_perf_level = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)?;
 
         if current_perf_level != perf_level {
-            debug!(
-                "set default perf_level ({perf_level:?}) to {} ({})",
-                self.amdgpu_device.device_name,
-                self.amdgpu_device.pci_bus,
-            );
+            debug!("    set default perf_level ({perf_level:?})");
             fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level.to_arg())
         } else {
             Ok(())
@@ -50,11 +46,7 @@ impl AppDevice {
 
         if current_profile != profile {
             let profile = (profile as u32).to_string();
-            debug!(
-                "set default profile ({profile:?}) to {} ({})",
-                self.amdgpu_device.device_name,
-                self.amdgpu_device.pci_bus,
-            );
+            debug!("    set default profile ({profile:?})");
             fs::write(&self.amdgpu_device.power_profile_path, profile)
         } else {
             Ok(())
@@ -81,11 +73,7 @@ impl AppDevice {
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
             else { return Ok(()) };
 
-        debug!(
-            "set default power cap. ({target_power_cap_watt}W) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("    set default power cap. ({target_power_cap_watt}W)");
 
         self.set_power_cap(target_power_cap_watt)
     }
@@ -108,11 +96,7 @@ impl AppDevice {
         let Some(target_temp) = self.config_device.default_fan_target_temperature
             else { return Ok(()) };
 
-        debug!(
-            "set default fan_target_temperature ({target_temp}C) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("    set default fan_target_temperature ({target_temp}C)");
 
         self.set_fan_target_temp(target_temp)
     }
@@ -135,11 +119,7 @@ impl AppDevice {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
             else { return Ok(()) };
 
-        debug!(
-            "set default fan_minimum_pwm ({minimum_pwm}%) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("    set default fan_minimum_pwm ({minimum_pwm}%)");
 
         self.set_fan_minimum_pwm(minimum_pwm)
     }
@@ -148,11 +128,7 @@ impl AppDevice {
         let Some(fan_zero_rpm) = self.config_device.fan_zero_rpm
             else { return Ok(()) };
 
-        debug!(
-            "set fan_zero_rpm ({fan_zero_rpm}) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("   set fan_zero_rpm ({fan_zero_rpm})");
 
         let fan_zero_rpm_path = self
             .amdgpu_device
@@ -168,6 +144,29 @@ impl AppDevice {
         Self::commit(&mut file)
     }
 
+    pub fn set_fan_target_rpm(&self, fan_target_rpm: u32) -> io::Result<()> {
+        debug!("   set acoustic_target_rpm_threshold ({fan_target_rpm})");
+
+        let fan_target_rpm_path = self
+            .amdgpu_device
+            .sysfs_path
+            .join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&fan_target_rpm_path)?;
+        let fan_target_rpm = format!("{fan_target_rpm} ");
+        file.write_all(fan_target_rpm.as_bytes())?;
+        Self::commit(&mut file)
+    }
+
+    pub fn set_default_fan_target_rpm(&self) -> io::Result<()> {
+        let Some(fan_target_rpm) = self.config_device.acoustic_target_rpm_threshold
+            else { return Ok(()) };
+
+        self.set_fan_target_rpm(fan_target_rpm)
+    }
+
     pub fn set_sclk_offset(&self) -> io::Result<()> {
         if self.amdgpu_device.sclk_offset.is_none() {
             return Ok(());
@@ -181,11 +180,7 @@ impl AppDevice {
             .open(&path)?;
         let so = format!("s {so} ");
 
-        debug!(
-            "set sclk_offset ({so}MHz) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("    set sclk_offset ({so}MHz)");
 
         file.write_all(so.as_bytes())?;
         Self::commit(&mut file)
@@ -204,11 +199,7 @@ impl AppDevice {
             .open(&path)?;
         let vo = format!("vo {vo} ");
 
-        debug!(
-            "set vddgfx_offset ({vo}mV) to {} ({})",
-            self.amdgpu_device.device_name,
-            self.amdgpu_device.pci_bus,
-        );
+        debug!("   set vddgfx_offset ({vo}mV)");
 
         file.write_all(vo.as_bytes())?;
         Self::commit(&mut file)

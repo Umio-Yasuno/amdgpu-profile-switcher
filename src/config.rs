@@ -19,6 +19,7 @@ pub struct ParsedConfigPerDevice {
     pub sclk_offset: Option<i32>,
     pub vddgfx_offset: Option<i32>,
     pub fan_zero_rpm: Option<bool>,
+    pub acoustic_target_rpm_threshold: Option<u32>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -36,6 +37,7 @@ impl ParsedConfigPerDevice {
         || self.sclk_offset != new.sclk_offset
         || self.vddgfx_offset != new.vddgfx_offset
         || self.fan_zero_rpm != new.fan_zero_rpm
+        || self.acoustic_target_rpm_threshold != new.acoustic_target_rpm_threshold
     }
 }
 
@@ -47,6 +49,7 @@ pub struct ParsedConfigEntry {
     pub power_cap_watt: Option<u32>,
     pub fan_target_temperature: Option<u32>,
     pub fan_minimum_pwm: Option<u32>,
+    pub acoustic_target_rpm_threshold: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -71,6 +74,8 @@ pub struct ConfigPerDevice {
     pub vddgfx_offset: Option<i32>,
     pub _vddgfx_offset_range: Option<[i32; 2]>,
     pub fan_zero_rpm: Option<bool>,
+    pub acoustic_target_rpm_threshold: Option<u32>,
+    pub _acoustic_target_rpm_threshold_range: Option<[u32; 2]>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -82,6 +87,7 @@ pub struct ConfigEntry {
     pub power_cap_watt: Option<u32>,
     pub fan_target_temperature: Option<u32>,
     pub fan_minimum_pwm: Option<u32>,
+    pub acoustic_target_rpm_threshold: Option<u32>,
 }
 
 #[derive(Debug, Clone)]
@@ -166,6 +172,7 @@ impl ConfigPerDevice {
             sclk_offset: self.sclk_offset,
             vddgfx_offset: self.vddgfx_offset,
             fan_zero_rpm: self.fan_zero_rpm,
+            acoustic_target_rpm_threshold: self.acoustic_target_rpm_threshold,
             entries: entries?,
         })
     }
@@ -211,8 +218,9 @@ impl ConfigEntry {
         let power_cap_watt = self.power_cap_watt;
         let fan_target_temperature = self.fan_target_temperature;
         let fan_minimum_pwm = self.fan_minimum_pwm;
+        let acoustic_target_rpm_threshold = self.acoustic_target_rpm_threshold;
 
-        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt, fan_target_temperature, fan_minimum_pwm })
+        Ok(ParsedConfigEntry { name, perf_level, profile, power_cap_watt, fan_target_temperature, fan_minimum_pwm, acoustic_target_rpm_threshold })
     }
 }
 

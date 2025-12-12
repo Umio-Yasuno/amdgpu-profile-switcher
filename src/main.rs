@@ -81,6 +81,8 @@ fn main() {
                         vddgfx_offset: None,
                         _vddgfx_offset_range: None,
                         fan_zero_rpm: None,
+                        acoustic_target_rpm_threshold: None,
+                        _acoustic_target_rpm_threshold_range: None,
                         entries: vec![entry],
                     };
 
@@ -209,6 +211,7 @@ fn main() {
             app.set_default_fan_target_temp(),
             app.set_default_fan_minimum_pwm(),
             app.set_fan_zero_rpm(),
+            app.set_default_fan_target_rpm(),
             app.set_sclk_offset(),
             app.set_vddgfx_offset(),
         ].into_iter().collect();
@@ -252,6 +255,7 @@ fn main() {
                             app.set_default_fan_target_temp(),
                             app.set_default_fan_minimum_pwm(),
                             app.set_fan_zero_rpm(),
+                            app.set_default_fan_target_rpm(),
                             app.set_sclk_offset(),
                             app.set_vddgfx_offset(),
                         ].into_iter().collect();
@@ -303,7 +307,12 @@ fn main() {
             }
 
             if let Some(apply_config) = &apply_config_entry {
-                debug!("target process: {}", apply_config.name);
+                debug!(
+                    "{} ({}): target process: {:?}",
+                    apply_config.name,
+                    app.amdgpu_device.pci_bus,
+                    app.amdgpu_device.device_name,
+                );
                 if let Some(perf_level) = apply_config.perf_level {
                     let _ = app.set_perf_level(perf_level);
                     debug!(
@@ -331,7 +340,7 @@ fn main() {
                 if let Some(target_temp) = apply_config.fan_target_temperature {
                     let _ = app.set_fan_target_temp(target_temp);
                     debug!(
-                        "{} ({}): Apply fan_target_temperature {target_temp}C",
+                        "{} ({}): Apply fan_target_temperature ({target_temp}C)",
                         app.amdgpu_device.pci_bus,
                         app.amdgpu_device.device_name,
                     );
@@ -339,7 +348,15 @@ fn main() {
                 if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
                     let _ = app.set_fan_minimum_pwm(minimum_pwm);
                     debug!(
-                        "{} ({}): Apply fan_minimum_pwm {minimum_pwm}% to ",
+                        "{} ({}): Apply fan_minimum_pwm ({minimum_pwm}%)",
+                        app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
+                    );
+                }
+                if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
+                    let _ = app.set_fan_target_rpm(fan_target_rpm);
+                    debug!(
+                        "{} ({}): Apply acoustic_target_rpm_threshold ({fan_target_rpm}RPM)",
                         app.amdgpu_device.pci_bus,
                         app.amdgpu_device.device_name,
                     );

@@ -7,7 +7,6 @@ use libdrm_amdgpu_sys::AMDGPU::{self, PowerCap, PowerProfile};
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
     pub sysfs_path: PathBuf,
-    pub debug_path: PathBuf,
     pub hwmon_path: PathBuf,
     pub device_id: u32,
     pub revision_id: u32,
@@ -20,12 +19,12 @@ pub struct AmdgpuDevice {
     pub sclk_offset: Option<SclkOffset>, // RDNA 4
     pub vddgfx_offset: Option<VddgfxOffset>, // RDNA 2/3/4
     pub fan_zero_rpm: Option<bool>,
+    pub acoustic_target_rpm_threshold: Option<AcousticTargetRpmThreshold>,
 }
 
 impl AmdgpuDevice {
     pub fn get_from_pci_bus(pci_bus: PCI::BUS_INFO) -> Option<Self> {
         let sysfs_path = pci_bus.get_sysfs_path();
-        let debug_path = pci_bus.get_debug_dri_path().ok()?;
         let power_profile_path = sysfs_path.join("pp_power_profile_mode");
         let dpm_perf_level_path = sysfs_path.join("power_dpm_force_performance_level");
 
@@ -55,11 +54,11 @@ impl AmdgpuDevice {
             (None, None)
         };
         let fan_zero_rpm = FanZeroRpm::from_sysfs_path(&sysfs_path);
+        let acoustic_target_rpm_threshold = AcousticTargetRpmThreshold::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
             sysfs_path,
-            debug_path,
             hwmon_path,
             device_id,
             revision_id,
@@ -72,6 +71,7 @@ impl AmdgpuDevice {
             sclk_offset,
             vddgfx_offset,
             fan_zero_rpm,
+            acoustic_target_rpm_threshold,
         })
     }
 
@@ -273,6 +273,43 @@ impl FanMinPwm {
         Some(Self {
             minimum_pwm: minimum_pwm?,
             pwm_range: pwm_range?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcousticTargetRpmThreshold {
+    pub rpm: u32,
+    pub rpm_range: [u32; 2],
+}
+
+impl AcousticTargetRpmThreshold {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let rpm: Option<u32>;
+        let rpm_range: Option<[u32; 2]>;
+
+        {
+            let path = path.into().join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
+            let s = std::fs::read_to_string(path).ok()?;
+            println!("{s:#?}");
+            let mut lines = s.lines();
+
+            lines.find(|l| l.starts_with("OD_ACOUSTIC_TARGET:"));
+            rpm = lines.next().and_then(|s| s.parse().ok());
+            lines.find(|l| l.starts_with("OD_RANGE:"));
+            rpm_range = lines.next().and_then(|s| {
+                let (min, max) = s
+                    .trim_start_matches("ACOUSTIC_TARGET: ")
+                    .split_once(" ")?;
+                let [min, max] = [min, max].map(|s| s.parse::<u32>().ok());
+
+                Some([min?, max?])
+            });
+        }
+
+        Some(Self {
+            rpm: rpm?,
+            rpm_range: rpm_range?,
         })
     }
 }

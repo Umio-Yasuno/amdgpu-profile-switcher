@@ -192,13 +192,14 @@ pub fn generate_config() -> ron::Result<String> {
         panic!("No AMDGPU devices.");
     }
 
-    let entry = ConfigEntry {
+    let entry_example = ConfigEntry {
         name: "glxgears".to_string(),
         perf_level: None,
         profile: Some("BOOTUP_DEFAULT".to_string()),
         power_cap_watt: None,
         fan_target_temperature: None,
         fan_minimum_pwm: None,
+        acoustic_target_rpm_threshold: None,
     };
     let config_devices: Vec<_> = pci_devs
         .iter()
@@ -244,6 +245,14 @@ pub fn generate_config() -> ron::Result<String> {
                 .vddgfx_offset
                 .as_ref()
                 .and_then(|vddgfx| vddgfx.range);
+            let acoustic_target_rpm_threshold = dev
+                .acoustic_target_rpm_threshold
+                .as_ref()
+                .map(|ac| ac.rpm);
+            let _acoustic_target_rpm_threshold_range = dev
+                .acoustic_target_rpm_threshold
+                .as_ref()
+                .map(|ac| ac.rpm_range);
 
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
@@ -261,7 +270,9 @@ pub fn generate_config() -> ron::Result<String> {
                 vddgfx_offset,
                 _vddgfx_offset_range,
                 fan_zero_rpm: dev.fan_zero_rpm,
-                entries: vec![entry.clone()],
+                acoustic_target_rpm_threshold,
+                _acoustic_target_rpm_threshold_range,
+                entries: vec![entry_example.clone()],
             })
         })
         .collect();
