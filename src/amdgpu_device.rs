@@ -291,7 +291,6 @@ impl AcousticTargetRpmThreshold {
         {
             let path = path.into().join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
             let s = std::fs::read_to_string(path).ok()?;
-            println!("{s:#?}");
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("OD_ACOUSTIC_TARGET:"));

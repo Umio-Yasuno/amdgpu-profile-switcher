@@ -190,7 +190,7 @@ fn main() {
         'wait: loop {
             if !app.check_if_device_is_active() {
                 debug!(
-                    "{} ({}): wait until active...",
+                    "{} ({}): Wait until active...",
                     app.amdgpu_device.pci_bus,
                     app.amdgpu_device.device_name,
                 );
@@ -199,24 +199,12 @@ fn main() {
                 break 'wait;
             }
         }
-        debug!("check permissions");
+        debug!("Check permissions");
         if !app.amdgpu_device.check_permissions() {
             panic!("Error: PermissionDenied for sysfs");
         }
 
-        let res: std::io::Result<Vec<_>> = [
-            app.set_default_perf_level(),
-            app.set_default_power_profile(),
-            app.set_default_power_cap(),
-            app.set_default_fan_target_temp(),
-            app.set_default_fan_minimum_pwm(),
-            app.set_fan_zero_rpm(),
-            app.set_default_fan_target_rpm(),
-            app.set_sclk_offset(),
-            app.set_vddgfx_offset(),
-        ].into_iter().collect();
-
-        res.unwrap();
+        app.set_default_od_config().unwrap();
     }
 
     let modified = utils::watch_config_file(&config_path);
@@ -248,17 +236,7 @@ fn main() {
                             app.amdgpu_device.device_name,
                         );
 
-                        let _: std::io::Result<Vec<_>> = [
-                            app.set_default_perf_level(),
-                            app.set_default_power_profile(),
-                            app.set_default_power_cap(),
-                            app.set_default_fan_target_temp(),
-                            app.set_default_fan_minimum_pwm(),
-                            app.set_fan_zero_rpm(),
-                            app.set_default_fan_target_rpm(),
-                            app.set_sclk_offset(),
-                            app.set_vddgfx_offset(),
-                        ].into_iter().collect();
+                        let _ = app.set_default_od_config();
                     }
                 } else if let Some(pci) = pci_devs.iter().find(|&pci_dev| pci_dev == &config_device.pci) {
                     let new_app = AppDevice {
@@ -308,80 +286,36 @@ fn main() {
 
             if let Some(apply_config) = &apply_config_entry {
                 debug!(
-                    "{} ({}): target process: {:?}",
-                    apply_config.name,
+                    "{} ({}): Detected target process: {:?} (pid: {pid:?})",
                     app.amdgpu_device.pci_bus,
                     app.amdgpu_device.device_name,
+                    apply_config.name,
                 );
                 if let Some(perf_level) = apply_config.perf_level {
                     let _ = app.set_perf_level(perf_level);
-                    debug!(
-                        "{} ({}): Apply {perf_level:?}",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 if let Some(profile) = apply_config.profile {
                     let _ = app.set_power_profile(profile);
-                    debug!(
-                        "{} ({}): Apply {profile:?}",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 if let Some(power_cap_watt) = apply_config.power_cap_watt {
                     let _ = app.set_power_cap(power_cap_watt);
-                    debug!(
-                        "{} ({}): Apply {power_cap_watt}W cap.",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 if let Some(target_temp) = apply_config.fan_target_temperature {
                     let _ = app.set_fan_target_temp(target_temp);
-                    debug!(
-                        "{} ({}): Apply fan_target_temperature ({target_temp}C)",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
                     let _ = app.set_fan_minimum_pwm(minimum_pwm);
-                    debug!(
-                        "{} ({}): Apply fan_minimum_pwm ({minimum_pwm}%)",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
                     let _ = app.set_fan_target_rpm(fan_target_rpm);
-                    debug!(
-                        "{} ({}): Apply acoustic_target_rpm_threshold ({fan_target_rpm}RPM)",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
                 }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
-                    "{} ({}): set default perf_level ({:?}) and power_profile ({:?})",
-                    app.amdgpu_device.pci_bus,
-                    app.amdgpu_device.device_name,
-                    app.config_device.default_perf_level,
-                    app.config_device.default_profile,
+                    "Target process (pid: {:?}) exited. Default settings restoration started.",
+                    app.cache_pid,
                 );
-                if let Some(power_cap) = &app.config_device.default_power_cap_watt {
-                    debug!(
-                        "{} ({}): set default power cap. ({power_cap}W)",
-                        app.amdgpu_device.pci_bus,
-                        app.amdgpu_device.device_name,
-                    );
-                }
-                let _ = app.set_default_perf_level();
-                let _ = app.set_default_power_profile();
-                let _ = app.set_default_power_cap();
-                let _ = app.set_default_fan_target_temp();
-                let _ = app.set_default_fan_minimum_pwm();
+                let _ = app.set_default_od_config();
                 app.cache_pid = None;
             }
         }

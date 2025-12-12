@@ -27,7 +27,7 @@ impl AppDevice {
         let current_perf_level = DpmForcedLevel::get_from_sysfs(&self.amdgpu_device.sysfs_path)?;
 
         if current_perf_level != perf_level {
-            debug!("    set default perf_level ({perf_level:?})");
+            debug!("    Set default perf_level ({perf_level:?})");
             fs::write(&self.amdgpu_device.dpm_perf_level_path, perf_level.to_arg())
         } else {
             Ok(())
@@ -46,7 +46,7 @@ impl AppDevice {
 
         if current_profile != profile {
             let profile = (profile as u32).to_string();
-            debug!("    set default profile ({profile:?})");
+            debug!("    Set default profile ({profile:?})");
             fs::write(&self.amdgpu_device.power_profile_path, profile)
         } else {
             Ok(())
@@ -55,7 +55,7 @@ impl AppDevice {
 
     pub fn set_power_cap(&self, power_cap_watt: u32) -> io::Result<()> {
         let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap");
-        let Some(current_power_cap_watt) = std::fs::read_to_string(power_cap_path)
+        let Some(current_power_cap_watt) = fs::read_to_string(power_cap_path)
             .ok()
             .and_then(|s| s.trim_end().parse::<u32>().ok())
             .and_then(|v| v.checked_div(1_000_000))
@@ -73,7 +73,7 @@ impl AppDevice {
         let Some(target_power_cap_watt) = self.config_device.default_power_cap_watt
             else { return Ok(()) };
 
-        debug!("    set default power cap. ({target_power_cap_watt}W)");
+        debug!("    Set default power cap. ({target_power_cap_watt}W)");
 
         self.set_power_cap(target_power_cap_watt)
     }
@@ -96,7 +96,7 @@ impl AppDevice {
         let Some(target_temp) = self.config_device.default_fan_target_temperature
             else { return Ok(()) };
 
-        debug!("    set default fan_target_temperature ({target_temp}C)");
+        debug!("    Set default fan_target_temperature ({target_temp}C)");
 
         self.set_fan_target_temp(target_temp)
     }
@@ -119,7 +119,7 @@ impl AppDevice {
         let Some(minimum_pwm) = self.config_device.default_fan_minimum_pwm
             else { return Ok(()) };
 
-        debug!("    set default fan_minimum_pwm ({minimum_pwm}%)");
+        debug!("    Set default fan_minimum_pwm ({minimum_pwm}%)");
 
         self.set_fan_minimum_pwm(minimum_pwm)
     }
@@ -128,7 +128,7 @@ impl AppDevice {
         let Some(fan_zero_rpm) = self.config_device.fan_zero_rpm
             else { return Ok(()) };
 
-        debug!("   set fan_zero_rpm ({fan_zero_rpm})");
+        debug!("    Set fan_zero_rpm ({fan_zero_rpm})");
 
         let fan_zero_rpm_path = self
             .amdgpu_device
@@ -145,7 +145,7 @@ impl AppDevice {
     }
 
     pub fn set_fan_target_rpm(&self, fan_target_rpm: u32) -> io::Result<()> {
-        debug!("   set acoustic_target_rpm_threshold ({fan_target_rpm})");
+        debug!("    Set acoustic_target_rpm_threshold ({fan_target_rpm})");
 
         let fan_target_rpm_path = self
             .amdgpu_device
@@ -180,7 +180,7 @@ impl AppDevice {
             .open(&path)?;
         let so = format!("s {so} ");
 
-        debug!("    set sclk_offset ({so}MHz)");
+        debug!("    Set sclk_offset ({so}MHz)");
 
         file.write_all(so.as_bytes())?;
         Self::commit(&mut file)
@@ -199,7 +199,7 @@ impl AppDevice {
             .open(&path)?;
         let vo = format!("vo {vo} ");
 
-        debug!("   set vddgfx_offset ({vo}mV)");
+        debug!("    Set vddgfx_offset ({vo}mV)");
 
         file.write_all(vo.as_bytes())?;
         Self::commit(&mut file)
@@ -219,8 +219,24 @@ impl AppDevice {
 
     pub fn check_if_device_is_active(&self) -> bool {
         let path = self.amdgpu_device.sysfs_path.join("power/runtime_status");
-        let Ok(s) = std::fs::read_to_string(path) else { return false };
+        let Ok(s) = fs::read_to_string(path) else { return false };
 
         s.starts_with("active")
+    }
+
+    pub fn set_default_od_config(&self) -> Result<Vec<()>, io::Error> {
+        let res: io::Result<Vec<_>> = [
+            self.set_default_perf_level(),
+            self.set_default_power_profile(),
+            self.set_default_power_cap(),
+            self.set_default_fan_target_temp(),
+            self.set_default_fan_minimum_pwm(),
+            self.set_fan_zero_rpm(),
+            self.set_default_fan_target_rpm(),
+            self.set_sclk_offset(),
+            self.set_vddgfx_offset(),
+        ].into_iter().collect();
+
+        res
     }
 }
