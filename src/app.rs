@@ -225,6 +225,11 @@ impl AppDevice {
     }
 
     pub fn set_default_od_config(&self) -> Result<Vec<()>, io::Error> {
+        debug!(
+            "{} ({}): Set default settings",
+            self.amdgpu_device.pci_bus,
+            self.amdgpu_device.device_name,
+        );
         let res: io::Result<Vec<_>> = [
             self.set_default_perf_level(),
             self.set_default_power_profile(),
