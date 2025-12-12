@@ -62,7 +62,6 @@ $ sudo systemctl start amdgpu-profile-switcher
 
 ## Config example
 ```rust
-// Config entries that are earlier take priority.
 /*
     perf_level: [
         "auto",
@@ -92,13 +91,31 @@ $ sudo systemctl start amdgpu-profile-switcher
     config_devices: [
         (
             pci: "0000:03:00.0",
-            default_perf_level: Some("auto"),
-            default_profile: Some("BOOTUP_DEFAULT"),
+            _device_name: Some("AMD Radeon RX 9060 XT"),
+            default_power_cap_watt: Some(180),
+            _power_cap_watt_range: Some((126, 200)),
+            default_perf_level: None,
+            default_profile: None,
+            default_fan_target_temperature: Some(70),
+            _fan_target_temperature_range: Some((25, 110)),
+            default_fan_minimum_pwm: Some(20),
+            _fan_minimum_pwm_range: Some((20, 100)),
+            sclk_offset: Some(-500),
+            _sclk_offset_range: Some((-500, 1000)),
+            vddgfx_offset: Some(-70),
+            _vddgfx_offset_range: Some((-200, 0)),
+            fan_zero_rpm: Some(true),
+            acoustic_target_rpm_threshold: Some(2400),
+            _acoustic_target_rpm_threshold_range: Some((500, 3500)),
             entries: [
                 (
                     name: "glxgears",
                     perf_level: None,
                     profile: Some("BOOTUP_DEFAULT"),
+                    power_cap_watt: None,
+                    fan_target_temperature: None,
+                    fan_minimum_pwm: None,
+                    acoustic_target_rpm_threshold: None,
                 ),
             ],
         ),
