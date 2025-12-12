@@ -188,9 +188,9 @@ fn main() {
         'wait: loop {
             if !app.check_if_device_is_active() {
                 debug!(
-                    "wait until {} ({}) is active...",
-                    app.amdgpu_device.device_name,
+                    "{} ({}): wait until active...",
                     app.amdgpu_device.pci_bus,
+                    app.amdgpu_device.device_name,
                 );
                 std::thread::sleep(std::time::Duration::from_secs(1));
             } else {
@@ -240,9 +240,9 @@ fn main() {
 
                     if changed {
                         debug!(
-                            "{} ({}):re-aplly default config",
-                            app.amdgpu_device.device_name,
+                            "{} ({}): re-aplly default config",
                             app.amdgpu_device.pci_bus,
+                            app.amdgpu_device.device_name,
                         );
 
                         let _: std::io::Result<Vec<_>> = [
@@ -307,52 +307,58 @@ fn main() {
                 if let Some(perf_level) = apply_config.perf_level {
                     let _ = app.set_perf_level(perf_level);
                     debug!(
-                        "Apply {perf_level:?} to {} ({})",
-                        app.amdgpu_device.device_name,
+                        "{} ({}): Apply {perf_level:?}",
                         app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
                     );
                 }
                 if let Some(profile) = apply_config.profile {
                     let _ = app.set_power_profile(profile);
                     debug!(
-                        "Apply {profile:?} to {} ({})",
-                        app.amdgpu_device.device_name,
+                        "{} ({}): Apply {profile:?}",
                         app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
                     );
                 }
                 if let Some(power_cap_watt) = apply_config.power_cap_watt {
                     let _ = app.set_power_cap(power_cap_watt);
                     debug!(
-                        "Apply {power_cap_watt}W cap. to {} ({})",
-                        app.amdgpu_device.device_name,
+                        "{} ({}): Apply {power_cap_watt}W cap.",
                         app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
                     );
                 }
                 if let Some(target_temp) = apply_config.fan_target_temperature {
                     let _ = app.set_fan_target_temp(target_temp);
                     debug!(
-                        "Apply fan_target_temperature {target_temp}C to {} ({})",
-                        app.amdgpu_device.device_name,
+                        "{} ({}): Apply fan_target_temperature {target_temp}C",
                         app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
                     );
                 }
                 if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
                     let _ = app.set_fan_minimum_pwm(minimum_pwm);
                     debug!(
-                        "Apply fan_minimum_pwm {minimum_pwm}% to {} ({})",
-                        app.amdgpu_device.device_name,
+                        "{} ({}): Apply fan_minimum_pwm {minimum_pwm}% to ",
                         app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
                     );
                 }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
-                    "set default perf_level ({:?}) and power_profile ({:?})",
+                    "{} ({}): set default perf_level ({:?}) and power_profile ({:?})",
+                    app.amdgpu_device.pci_bus,
+                    app.amdgpu_device.device_name,
                     app.config_device.default_perf_level,
                     app.config_device.default_profile,
                 );
                 if let Some(power_cap) = &app.config_device.default_power_cap_watt {
-                    debug!("set default power cap. ({power_cap}W)");
+                    debug!(
+                        "{} ({}): set default power cap. ({power_cap}W)",
+                        app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
+                    );
                 }
                 let _ = app.set_default_perf_level();
                 let _ = app.set_default_power_profile();
