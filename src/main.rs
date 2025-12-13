@@ -176,7 +176,12 @@ fn main() {
             let amdgpu_device = AmdgpuDevice::get_from_pci_bus(*pci)?;
             let config_device = config_device.clone();
 
-            Some(AppDevice { amdgpu_device, config_device, cache_pid: None })
+            Some(AppDevice {
+                amdgpu_device,
+                config_device,
+                cache_pid: None,
+                changed_default_config: false,
+            })
         }).collect()
     };
 
@@ -232,23 +237,14 @@ fn main() {
                     .iter_mut()
                     .find(|app| app.amdgpu_device.pci_bus == config_device.pci)
                 {
-                    let changed = app.config_device.is_default_changed(config_device);
+                    app.check_changed_default_config(config_device);
                     app.config_device.clone_from(config_device);
-
-                    if changed {
-                        debug!(
-                            "{} ({}): re-aplly default config",
-                            app.amdgpu_device.pci_bus,
-                            app.amdgpu_device.device_name,
-                        );
-
-                        let _ = app.set_default_od_config();
-                    }
                 } else if let Some(pci) = pci_devs.iter().find(|&pci_dev| pci_dev == &config_device.pci) {
                     let new_app = AppDevice {
                         amdgpu_device: AmdgpuDevice::get_from_pci_bus(*pci).unwrap(),
                         config_device: config_device.clone(),
                         cache_pid: None,
+                        changed_default_config: false,
                     };
 
                     app_devices.push(new_app);
@@ -267,6 +263,21 @@ fn main() {
         }
 
         'device: for app in app_devices.iter_mut() {
+            if !app.check_if_device_is_active() {
+                continue 'device;
+            }
+
+            if app.changed_default_config {
+                debug!(
+                    "{} ({}): re-aplly default config",
+                    app.amdgpu_device.pci_bus,
+                    app.amdgpu_device.device_name,
+                );
+
+                let _ = app.set_default_od_config();
+                app.changed_default_config = false;
+            }
+
             if app.config_device.entries.is_empty() {
                 continue 'device;
             }
@@ -283,10 +294,6 @@ fn main() {
             }
 
             if app.cache_pid.is_some() && pid == app.cache_pid {
-                continue 'device;
-            }
-
-            if !app.check_if_device_is_active() {
                 continue 'device;
             }
 

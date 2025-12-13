@@ -12,6 +12,7 @@ pub struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
     pub config_device: ParsedConfigPerDevice,
     pub cache_pid: Option<i32>,
+    pub changed_default_config: bool,
 }
 
 const IO_ERROR_POWER_CAP: &str = "Can't get the power cap";
@@ -243,5 +244,9 @@ impl AppDevice {
         ].into_iter().collect();
 
         res
+    }
+
+    pub fn check_changed_default_config(&mut self, new_config_device: &ParsedConfigPerDevice) {
+        self.changed_default_config = self.config_device.is_default_changed(new_config_device);
     }
 }
