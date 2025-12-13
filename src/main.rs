@@ -1,4 +1,5 @@
 use std::sync::atomic::Ordering;
+use std::cell::OnceCell;
 
 use libdrm_amdgpu_sys::AMDGPU;
 
@@ -187,13 +188,18 @@ fn main() {
     debug!("{} v{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 
     for app in &app_devices {
+        let once_log = OnceCell::new();
         'wait: loop {
             if !app.check_if_device_is_active() {
-                debug!(
-                    "{} ({}): Wait until active...",
-                    app.amdgpu_device.pci_bus,
-                    app.amdgpu_device.device_name,
-                );
+                once_log.get_or_init(|| {
+                    debug!(
+                        "{} ({}): Wait until active...",
+                        app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
+                    );
+
+                    ()
+                });
                 std::thread::sleep(std::time::Duration::from_secs(1));
             } else {
                 break 'wait;
