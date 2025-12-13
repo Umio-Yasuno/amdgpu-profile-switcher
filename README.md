@@ -1,5 +1,5 @@
 # amdgpu-profile-switcher
-`amdgpu-profile-switcher` is a simple tool that automatically switches profiles for AMDGPU, not a overclock/undervolt tool.  
+`amdgpu-profile-switcher` is a simple tool that automatically switches profiles for AMDGPU, and it also allows for advanced settings such as overclocking, undervolting, and fan control.  
 The tool switches between perf level (`power_dpm_force_performance_level`) and power_profile (`pp_power_profile_mode`) depending on the process program name. (requires root privileges)  
 
 ## Usage
