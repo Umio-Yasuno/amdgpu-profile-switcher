@@ -5,7 +5,7 @@ use log::debug;
 use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
 
-use crate::config::ParsedConfigPerDevice;
+use crate::config::{ParsedConfigEntry, ParsedConfigPerDevice};
 use crate::amdgpu_device::AmdgpuDevice;
 
 pub struct AppDevice {
@@ -225,6 +225,29 @@ impl AppDevice {
         ].into_iter().collect();
 
         res
+    }
+
+    pub fn apply_config(&self, apply_config: &ParsedConfigEntry) -> Result<(), io::Error> {
+        if let Some(perf_level) = apply_config.perf_level {
+            let _ = self.set_perf_level(perf_level)?;
+        }
+        if let Some(profile) = apply_config.profile {
+            let _ = self.set_power_profile(profile)?;
+        }
+        if let Some(power_cap_watt) = apply_config.power_cap_watt {
+            let _ = self.set_power_cap(power_cap_watt)?;
+        }
+        if let Some(target_temp) = apply_config.fan_target_temperature {
+            let _ = self.set_fan_target_temp(target_temp)?;
+        }
+        if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
+            let _ = self.set_fan_minimum_pwm(minimum_pwm)?;
+        }
+        if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
+            let _ = self.set_fan_target_rpm(fan_target_rpm)?;
+        }
+
+        Ok(())
     }
 
     pub fn check_changed_default_config(&mut self, new_config_device: &ParsedConfigPerDevice) {

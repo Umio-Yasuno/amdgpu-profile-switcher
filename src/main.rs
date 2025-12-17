@@ -215,6 +215,7 @@ fn main() {
             panic!("Error: PermissionDenied for sysfs");
         }
 
+        // TODO: Error Message
         app.set_default_od_config().unwrap();
     }
 
@@ -274,6 +275,7 @@ fn main() {
                     app.amdgpu_device.device_name,
                 );
 
+                // TODO: Error Handling
                 let _ = app.set_default_od_config();
                 app.changed_default_config = false;
             }
@@ -304,30 +306,15 @@ fn main() {
                     app.amdgpu_device.device_name,
                     apply_config.name,
                 );
-                if let Some(perf_level) = apply_config.perf_level {
-                    let _ = app.set_perf_level(perf_level);
-                }
-                if let Some(profile) = apply_config.profile {
-                    let _ = app.set_power_profile(profile);
-                }
-                if let Some(power_cap_watt) = apply_config.power_cap_watt {
-                    let _ = app.set_power_cap(power_cap_watt);
-                }
-                if let Some(target_temp) = apply_config.fan_target_temperature {
-                    let _ = app.set_fan_target_temp(target_temp);
-                }
-                if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
-                    let _ = app.set_fan_minimum_pwm(minimum_pwm);
-                }
-                if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
-                    let _ = app.set_fan_target_rpm(fan_target_rpm);
-                }
+                // TODO: Error Handling
+                let _ = app.apply_config(&apply_config);
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
                     "Target process (pid: {:?}) exited. Default settings restoration started.",
                     app.cache_pid,
                 );
+                // TODO: Error Handling
                 let _ = app.set_default_od_config();
                 app.cache_pid = None;
             }
