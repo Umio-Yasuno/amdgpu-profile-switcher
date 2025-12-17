@@ -1,4 +1,4 @@
-use std::{fs, io::{self, Write}, path::PathBuf};
+use std::{fs, io::{self, Write}};
 
 use log::debug;
 
@@ -55,8 +55,7 @@ impl AppDevice {
     }
 
     pub fn set_power_cap(&self, power_cap_watt: u32) -> io::Result<()> {
-        let power_cap_path = self.amdgpu_device.hwmon_path.join("power1_cap");
-        let Some(current_power_cap_watt) = fs::read_to_string(power_cap_path)
+        let Some(current_power_cap_watt) = fs::read_to_string(&self.amdgpu_device.power_cap_path)
             .ok()
             .and_then(|s| s.trim_end().parse::<u32>().ok())
             .and_then(|v| v.checked_div(1_000_000))
@@ -64,7 +63,7 @@ impl AppDevice {
 
         if power_cap_watt != current_power_cap_watt {
             let power_cap = (power_cap_watt * 1_000_000).to_string();
-            fs::write(self.amdgpu_device.hwmon_path.join("power1_cap"), power_cap)
+            fs::write(&self.amdgpu_device.power_cap_path, power_cap)
         } else {
             Ok(())
         }
@@ -80,14 +79,12 @@ impl AppDevice {
     }
 
     pub fn set_fan_target_temp(&self, target_temp: u32) -> io::Result<()> {
-        let fan_target_temp_path = self
-            .amdgpu_device
-            .sysfs_path
-            .join("gpu_od/fan_ctrl/fan_target_temperature");
+        let Some(ref fan_target_temp) = self.amdgpu_device.fan_target_temperature
+            else { return Ok(()) };
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&fan_target_temp_path)?;
+            .open(&fan_target_temp.path)?;
         let target_temp = format!("{target_temp} ");
         file.write_all(target_temp.as_bytes())?;
         Self::commit(&mut file)
@@ -103,14 +100,12 @@ impl AppDevice {
     }
 
     pub fn set_fan_minimum_pwm(&self, minimum_pwm: u32) -> io::Result<()> {
-        let fan_minimum_pwm_path = self
-            .amdgpu_device
-            .sysfs_path
-            .join("gpu_od/fan_ctrl/fan_minimum_pwm");
+        let Some(ref fan_minimum_pwm) = self.amdgpu_device.fan_minimum_pwm
+            else { return Ok(()) };
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&fan_minimum_pwm_path)?;
+            .open(&fan_minimum_pwm.path)?;
         let minimum_pwm = format!("{minimum_pwm} ");
         file.write_all(minimum_pwm.as_bytes())?;
         Self::commit(&mut file)
@@ -131,10 +126,11 @@ impl AppDevice {
 
         debug!("    Set fan_zero_rpm ({fan_zero_rpm})");
 
-        let fan_zero_rpm_path = self
-            .amdgpu_device
-            .sysfs_path
-            .join("gpu_od/fan_ctrl/fan_zero_rpm_enable");
+        let fan_zero_rpm_path = if let Some(ref f) = self.amdgpu_device.fan_zero_rpm {
+            &f.path
+        } else {
+            return Ok(())
+        };
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
@@ -146,16 +142,14 @@ impl AppDevice {
     }
 
     pub fn set_fan_target_rpm(&self, fan_target_rpm: u32) -> io::Result<()> {
+        let Some(ref acoustic_target_rpm_threshold) = self.amdgpu_device.acoustic_target_rpm_threshold
+            else { return Ok(()) };
         debug!("    Set acoustic_target_rpm_threshold ({fan_target_rpm})");
 
-        let fan_target_rpm_path = self
-            .amdgpu_device
-            .sysfs_path
-            .join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&fan_target_rpm_path)?;
+            .open(&acoustic_target_rpm_threshold.path)?;
         let fan_target_rpm = format!("{fan_target_rpm} ");
         file.write_all(fan_target_rpm.as_bytes())?;
         Self::commit(&mut file)
@@ -174,11 +168,10 @@ impl AppDevice {
         }
 
         let Some(so) = self.config_device.sclk_offset else { return Ok(()) };
-        let path = self.pp_od_clk_voltage_path();
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&path)?;
+            .open(&self.amdgpu_device.pp_od_clk_voltage_path)?;
         let so = format!("s {so} ");
 
         debug!("    Set sclk_offset ({so}MHz)");
@@ -193,11 +186,10 @@ impl AppDevice {
         }
 
         let Some(vo) = self.config_device.vddgfx_offset else { return Ok(()) };
-        let path = self.pp_od_clk_voltage_path();
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&path)?;
+            .open(&self.amdgpu_device.pp_od_clk_voltage_path)?;
         let vo = format!("vo {vo} ");
 
         debug!("    Set vddgfx_offset ({vo}mV)");
@@ -206,23 +198,12 @@ impl AppDevice {
         Self::commit(&mut file)
     }
 
-    fn pp_od_clk_voltage_path(&self) -> PathBuf {
-        self.amdgpu_device.sysfs_path.join("pp_od_clk_voltage")
-    }
-
     fn commit(file: &mut fs::File) -> io::Result<()> {
         file.write_all(b"c")
     }
 
     pub fn name_list(&self) -> Vec<String> {
         self.config_device.names()
-    }
-
-    pub fn check_if_device_is_active(&self) -> bool {
-        let path = self.amdgpu_device.sysfs_path.join("power/runtime_status");
-        let Ok(s) = fs::read_to_string(path) else { return false };
-
-        s.starts_with("active")
     }
 
     pub fn set_default_od_config(&self) -> Result<Vec<()>, io::Error> {

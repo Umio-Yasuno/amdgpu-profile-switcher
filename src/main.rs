@@ -195,7 +195,7 @@ fn main() {
     for app in &app_devices {
         let once_log = OnceCell::new();
         'wait: loop {
-            if !app.check_if_device_is_active() {
+            if !app.amdgpu_device.check_if_device_is_active() {
                 once_log.get_or_init(|| {
                     debug!(
                         "{} ({}): Wait until active...",
@@ -263,7 +263,7 @@ fn main() {
         }
 
         'device: for app in app_devices.iter_mut() {
-            if !app.check_if_device_is_active() {
+            if !app.amdgpu_device.check_if_device_is_active() {
                 continue 'device;
             }
 

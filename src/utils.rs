@@ -269,7 +269,7 @@ pub fn generate_config() -> ron::Result<String> {
                 _sclk_offset_range,
                 vddgfx_offset,
                 _vddgfx_offset_range,
-                fan_zero_rpm: dev.fan_zero_rpm,
+                fan_zero_rpm: dev.fan_zero_rpm.map(|f| f.flag),
                 acoustic_target_rpm_threshold,
                 _acoustic_target_rpm_threshold_range,
                 entries: vec![entry_example.clone()],

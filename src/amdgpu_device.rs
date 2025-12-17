@@ -7,19 +7,21 @@ use libdrm_amdgpu_sys::AMDGPU::{self, PowerCap, PowerProfile};
 pub struct AmdgpuDevice {
     pub pci_bus: PCI::BUS_INFO,
     pub sysfs_path: PathBuf,
-    pub hwmon_path: PathBuf,
+    pub pp_od_clk_voltage_path: PathBuf,
     pub device_id: u32,
     pub revision_id: u32,
     pub device_name: String,
     pub power_profile_path: PathBuf,
     pub dpm_perf_level_path: PathBuf,
     pub power_cap: Option<PowerCap>,
-    pub fan_target_temperature: Option<FanTargetTemp>,
-    pub fan_minimum_pwm: Option<FanMinPwm>,
+    pub power_cap_path: PathBuf,
+    pub fan_target_temperature: Option<FanTargetTemp>, // RDNA 3/4
+    pub fan_minimum_pwm: Option<FanMinPwm>, // RDNA 3/4
     pub sclk_offset: Option<SclkOffset>, // RDNA 4
     pub vddgfx_offset: Option<VddgfxOffset>, // RDNA 2/3/4
-    pub fan_zero_rpm: Option<bool>,
-    pub acoustic_target_rpm_threshold: Option<AcousticTargetRpmThreshold>,
+    pub fan_zero_rpm: Option<FanZeroRpm>, // RDNA 3/4
+    pub acoustic_target_rpm_threshold: Option<AcousticTargetRpmThreshold>, // RDNA 3/4
+    pub runtime_status_path: PathBuf,
 }
 
 impl AmdgpuDevice {
@@ -34,7 +36,7 @@ impl AmdgpuDevice {
 
         let [device_id, revision_id] = {
             let [did, rid] = ["device", "revision"]
-                .map(|s| std::fs::read_to_string(sysfs_path.join(s)).ok());
+                .map(|s| fs::read_to_string(sysfs_path.join(s)).ok());
 
             [did?, rid?]
                 .map(|s|
@@ -45,9 +47,11 @@ impl AmdgpuDevice {
             .unwrap_or(AMDGPU::DEFAULT_DEVICE_NAME.to_string());
         let hwmon_path = pci_bus.get_hwmon_path()?;
         let power_cap = PowerCap::from_hwmon_path(&hwmon_path);
+        let power_cap_path = hwmon_path.join("power1_cap");
         let fan_target_temperature = FanTargetTemp::from_sysfs_path(&sysfs_path);
         let fan_minimum_pwm = FanMinPwm::from_sysfs_path(&sysfs_path);
-        let pp_od_clk_voltage = std::fs::read_to_string(sysfs_path.join("pp_od_clk_voltage"));
+        let pp_od_clk_voltage_path = sysfs_path.join("pp_od_clk_voltage");
+        let pp_od_clk_voltage = fs::read_to_string(&pp_od_clk_voltage_path);
         let (sclk_offset, vddgfx_offset) = if let Ok(s) = pp_od_clk_voltage {
             (SclkOffset::from_str(&s), VddgfxOffset::from_str(&s))
         } else {
@@ -55,35 +59,27 @@ impl AmdgpuDevice {
         };
         let fan_zero_rpm = FanZeroRpm::from_sysfs_path(&sysfs_path);
         let acoustic_target_rpm_threshold = AcousticTargetRpmThreshold::from_sysfs_path(&sysfs_path);
+        let runtime_status_path = sysfs_path.join("power/runtime_status");
 
         Some(Self {
             pci_bus,
             sysfs_path,
-            hwmon_path,
+            pp_od_clk_voltage_path,
             device_id,
             revision_id,
             device_name,
             power_profile_path,
             dpm_perf_level_path,
             power_cap,
+            power_cap_path,
             fan_target_temperature,
             fan_minimum_pwm,
             sclk_offset,
             vddgfx_offset,
             fan_zero_rpm,
             acoustic_target_rpm_threshold,
+            runtime_status_path,
         })
-    }
-
-    pub fn _update(&mut self) {
-        self.power_cap = PowerCap::from_hwmon_path(&self.hwmon_path);
-        self.fan_target_temperature = FanTargetTemp::from_sysfs_path(&self.sysfs_path);
-        self.fan_minimum_pwm = FanMinPwm::from_sysfs_path(&self.sysfs_path);
-        let pp_od_clk_voltage = std::fs::read_to_string(self.sysfs_path.join("pp_od_clk_voltage"));
-        if let Ok(s) = pp_od_clk_voltage {
-            self.sclk_offset = SclkOffset::from_str(&s);
-            self.vddgfx_offset = VddgfxOffset::from_str(&s);
-        }
     }
 
     pub fn check_permissions(&self) -> bool {
@@ -97,25 +93,37 @@ impl AmdgpuDevice {
     pub fn get_all_supported_power_profile(&self) -> Vec<PowerProfile> {
         PowerProfile::get_all_supported_profiles_from_sysfs(&self.sysfs_path)
     }
+
+    pub fn check_if_device_is_active(&self) -> bool {
+        let Ok(s) = fs::read_to_string(&self.runtime_status_path) else { return false };
+
+        s.starts_with("active")
+    }
 }
 
 #[derive(Debug, Clone)]
-pub struct FanZeroRpm;
+pub struct FanZeroRpm {
+    pub path: PathBuf,
+    pub flag: bool,
+}
 
 impl FanZeroRpm {
-    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<bool> {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let current: bool;
+        let path = path.into().join("gpu_od/fan_ctrl/fan_zero_rpm_enable");
 
         {
-            let path = path.into().join("gpu_od/fan_ctrl/fan_zero_rpm_enable");
-            let s = std::fs::read_to_string(path).ok()?;
+            let s = fs::read_to_string(&path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("FAN_ZERO_RPM_ENABLE:"));
             current = lines.next()? == "1";
         }
 
-        Some(current)
+        Some(Self {
+            path,
+            flag: current,
+        })
     }
 }
 
@@ -156,7 +164,7 @@ impl SclkOffset {
     }
 
     pub fn _from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
-        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
+        let s = fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
 
         Self::from_str(&s)
     }
@@ -199,7 +207,7 @@ impl VddgfxOffset {
     }
 
     pub fn _from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
-        let s = std::fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
+        let s = fs::read_to_string(path.into().join("pp_od_clk_voltage")).ok()?;
 
         Self::from_str(&s)
     }
@@ -207,6 +215,7 @@ impl VddgfxOffset {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FanTargetTemp {
+    pub path: PathBuf,
     pub target_temp: u32,
     pub temp_range: [u32; 2],
 }
@@ -215,10 +224,10 @@ impl FanTargetTemp {
     pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let target_temp: Option<u32>;
         let temp_range: Option<[u32; 2]>;
+        let path = path.into().join("gpu_od/fan_ctrl/fan_target_temperature");
 
         {
-            let path = path.into().join("gpu_od/fan_ctrl/fan_target_temperature");
-            let s = std::fs::read_to_string(path).ok()?;
+            let s = fs::read_to_string(&path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("FAN_TARGET_TEMPERATURE:"));
@@ -235,6 +244,7 @@ impl FanTargetTemp {
         }
 
         Some(Self {
+            path,
             target_temp: target_temp?,
             temp_range: temp_range?,
         })
@@ -243,6 +253,7 @@ impl FanTargetTemp {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FanMinPwm {
+    pub path: PathBuf,
     pub minimum_pwm: u32,
     pub pwm_range: [u32; 2],
 }
@@ -251,10 +262,10 @@ impl FanMinPwm {
     pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let minimum_pwm: Option<u32>;
         let pwm_range: Option<[u32; 2]>;
+        let path = path.into().join("gpu_od/fan_ctrl/fan_minimum_pwm");
 
         {
-            let path = path.into().join("gpu_od/fan_ctrl/fan_minimum_pwm");
-            let s = std::fs::read_to_string(path).ok()?;
+            let s = fs::read_to_string(&path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("FAN_MINIMUM_PWM:"));
@@ -271,6 +282,7 @@ impl FanMinPwm {
         }
 
         Some(Self {
+            path,
             minimum_pwm: minimum_pwm?,
             pwm_range: pwm_range?,
         })
@@ -279,6 +291,7 @@ impl FanMinPwm {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AcousticTargetRpmThreshold {
+    pub path: PathBuf,
     pub rpm: u32,
     pub rpm_range: [u32; 2],
 }
@@ -287,10 +300,10 @@ impl AcousticTargetRpmThreshold {
     pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
         let rpm: Option<u32>;
         let rpm_range: Option<[u32; 2]>;
+        let path = path.into().join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
 
         {
-            let path = path.into().join("gpu_od/fan_ctrl/acoustic_target_rpm_threshold");
-            let s = std::fs::read_to_string(path).ok()?;
+            let s = fs::read_to_string(&path).ok()?;
             let mut lines = s.lines();
 
             lines.find(|l| l.starts_with("OD_ACOUSTIC_TARGET:"));
@@ -307,6 +320,7 @@ impl AcousticTargetRpmThreshold {
         }
 
         Some(Self {
+            path,
             rpm: rpm?,
             rpm_range: rpm_range?,
         })
