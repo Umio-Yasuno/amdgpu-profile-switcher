@@ -277,6 +277,7 @@ fn main() {
 
                 // TODO: Error Handling
                 let _ = app.set_default_od_config();
+                app.cache_pid = None;
                 app.changed_default_config = false;
             }
 
