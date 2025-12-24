@@ -3,6 +3,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::fs;
 
+use log::{debug, error};
+
 use ron::{de, ser};
 
 use crate::{AMDGPU, AmdgpuDevice};
@@ -65,7 +67,7 @@ const PROFILE_LIST: &[&str] = &[
 ];
 
 pub fn load_raw_config(config_path: &Path) -> Config {
-    let s = std::fs::read_to_string(config_path).unwrap();
+    let s = fs::read_to_string(config_path).unwrap();
 
     match de::from_str(&s) {
         Ok(v) => v,
@@ -73,16 +75,22 @@ pub fn load_raw_config(config_path: &Path) -> Config {
     }
 }
 
-pub fn load_config(config_path: &Path) -> ParsedConfig {
-    let s = std::fs::read_to_string(config_path).unwrap();
+pub fn load_config(config_path: &Path) -> Result<ParsedConfig, ParseConfigError> {
+    let s = fs::read_to_string(config_path).unwrap();
 
     let config: Config = match de::from_str(&s) {
         Ok(v) => v,
-        Err(e) => panic!("{e:?}"),
+        Err(e) => {
+            error!("{e:?}");
+            return Err(ParseConfigError::FromStrError);
+        },
     };
 
     match config.parse() {
-        Ok(v) => v,
+        Ok(v) => {
+            debug!("Config file parsed successfully");
+            Ok(v)
+        },
         Err(e) => {
             let mut lines = s.lines().enumerate();
             let mut line_number: Option<usize> = None;
@@ -119,10 +127,12 @@ pub fn load_config(config_path: &Path) -> ParsedConfig {
             }
 
             if let Some(line_number) = line_number {
-                panic!("Parse Error: {e:?}, Line {}", line_number+1);
+                error!("Parse Error: {e:?}, Line {}", line_number+1);
             } else {
-                panic!("Parse Error: {e:?}");
+                error!("Parse Error: {e:?}");
             }
+
+            Err(e)
         },
     }
 }

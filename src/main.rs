@@ -106,7 +106,7 @@ fn main() {
             },
             AppMode::CheckConfig => {
                 let config_path = config_path.unwrap();
-                let config = utils::load_config(&config_path);
+                let config = utils::load_config(&config_path).unwrap();
                 println!("config_path: {config_path:?}");
                 println!("{config:#?}");
                 return;
@@ -168,7 +168,7 @@ fn main() {
     }
 
     let mut app_devices: Vec<_> = {
-        let config = utils::load_config(&config_path);
+        let config = utils::load_config(&config_path).unwrap();
         config.config_devices.iter().filter_map(|config_device| {
             let Some(pci) = pci_devs.iter().find(|&pci| &config_device.pci == pci) else {
                 pci_list!(pci_devs, config_device.pci);
@@ -229,7 +229,21 @@ fn main() {
     loop {
         if modified.load(Ordering::Acquire) {
             debug!("Reload config file");
-            let config = utils::load_config(&config_path);
+            let config = loop {
+                match utils::load_config(&config_path) {
+                    Ok(c) => break c,
+                    Err(_) => {
+                        modified.store(false, Ordering::Release);
+
+                        'wait: loop {
+                            std::thread::sleep(std::time::Duration::from_secs(1));
+                            if modified.load(Ordering::Acquire) {
+                                break 'wait;
+                            }
+                        }
+                    },
+                }
+            };
 
             name_list.clear();
 

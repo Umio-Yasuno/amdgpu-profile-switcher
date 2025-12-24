@@ -98,6 +98,7 @@ pub enum ParseConfigError {
     EntryNameIsEmpty,
     InvalidPerfLevel(String),
     InvalidProfile(String),
+    FromStrError,
 }
 
 impl Config {
