@@ -215,7 +215,6 @@ fn main() {
             panic!("Error: PermissionDenied for sysfs");
         }
 
-        // TODO: Error Message
         app.set_default_od_config().unwrap();
     }
 
@@ -289,7 +288,6 @@ fn main() {
                     app.amdgpu_device.device_name,
                 );
 
-                // TODO: Error Handling
                 let _ = app.set_default_od_config();
                 app.cache_pid = None;
                 app.changed_default_config = false;
@@ -321,15 +319,20 @@ fn main() {
                     app.amdgpu_device.device_name,
                     apply_config.name,
                 );
-                // TODO: Error Handling
-                let _ = app.apply_config(&apply_config);
+                if let Err((e, s)) = app.apply_config(&apply_config) {
+                    debug!(
+                        "{} ({}): Failed to set {s} for {:?} ({e:?})",
+                        app.amdgpu_device.pci_bus,
+                        app.amdgpu_device.device_name,
+                        apply_config.name,
+                    );
+                }
                 app.cache_pid = pid;
             } else if app.cache_pid.is_some() {
                 debug!(
                     "Target process (pid: {:?}) exited. Default settings restoration started.",
                     app.cache_pid,
                 );
-                // TODO: Error Handling
                 let _ = app.set_default_od_config();
                 app.cache_pid = None;
             }

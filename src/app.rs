@@ -206,45 +206,66 @@ impl AppDevice {
         self.config_device.names()
     }
 
-    pub fn set_default_od_config(&self) -> Result<Vec<()>, io::Error> {
+    pub fn set_default_od_config(&self) -> Result<(), io::Error> {
         debug!(
             "{} ({}): Set default settings",
             self.amdgpu_device.pci_bus,
             self.amdgpu_device.device_name,
         );
-        let res: io::Result<Vec<_>> = [
-            self.set_default_perf_level(),
-            self.set_default_power_profile(),
-            self.set_default_power_cap(),
-            self.set_default_fan_target_temp(),
-            self.set_default_fan_minimum_pwm(),
-            self.set_fan_zero_rpm(),
-            self.set_default_fan_target_rpm(),
-            self.set_sclk_offset(),
-            self.set_vddgfx_offset(),
-        ].into_iter().collect();
 
-        res
+        for (result, s) in [
+            (self.set_default_perf_level(), "perf_level"),
+            (self.set_default_power_profile(), "power_profile"),
+            (self.set_default_power_cap(), "power_cap"),
+            (self.set_default_fan_target_temp(), "fan_target_temp"),
+            (self.set_default_fan_minimum_pwm(), "fan_minimum_pwm"),
+            (self.set_fan_zero_rpm(), "fan_zero_rpm"),
+            (self.set_default_fan_target_rpm(), "fan_target_rpm"),
+            (self.set_sclk_offset(), "sclk_offset"),
+            (self.set_vddgfx_offset(), "vddgfx_offset"),
+        ] {
+            if let Err(e) = result {
+                debug!(
+                    "{} ({}):    Failed to set {s} ({e:?})",
+                    self.amdgpu_device.pci_bus,
+                    self.amdgpu_device.device_name,
+                );
+            }
+        }
+
+        debug!(
+            "{} ({}): Done setting default settings",
+            self.amdgpu_device.pci_bus,
+            self.amdgpu_device.device_name,
+        );
+
+        Ok(())
     }
 
-    pub fn apply_config(&self, apply_config: &ParsedConfigEntry) -> Result<(), io::Error> {
+    pub fn apply_config(&self, apply_config: &ParsedConfigEntry) -> Result<(), (io::Error, &str)> {
         if let Some(perf_level) = apply_config.perf_level {
-            let _ = self.set_perf_level(perf_level)?;
+            let _ = self.set_perf_level(perf_level)
+                .map_err(|e| (e, "perf_level"))?;
         }
         if let Some(profile) = apply_config.profile {
-            let _ = self.set_power_profile(profile)?;
+            let _ = self.set_power_profile(profile)
+                .map_err(|e| (e, "power_profile"))?;
         }
         if let Some(power_cap_watt) = apply_config.power_cap_watt {
-            let _ = self.set_power_cap(power_cap_watt)?;
+            let _ = self.set_power_cap(power_cap_watt)
+                .map_err(|e| (e, "power_cap"))?;
         }
         if let Some(target_temp) = apply_config.fan_target_temperature {
-            let _ = self.set_fan_target_temp(target_temp)?;
+            let _ = self.set_fan_target_temp(target_temp)
+                .map_err(|e| (e, "fan_target_temp"))?;
         }
         if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
-            let _ = self.set_fan_minimum_pwm(minimum_pwm)?;
+            let _ = self.set_fan_minimum_pwm(minimum_pwm)
+                .map_err(|e| (e, "fan_minimum_pwm"))?;
         }
         if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
-            let _ = self.set_fan_target_rpm(fan_target_rpm)?;
+            let _ = self.set_fan_target_rpm(fan_target_rpm)
+                .map_err(|e| (e, "fan_target_rpm"))?;
         }
 
         Ok(())
