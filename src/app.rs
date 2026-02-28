@@ -6,7 +6,7 @@ use libdrm_amdgpu_sys::AMDGPU;
 use AMDGPU::{DpmForcedLevel, PowerProfile};
 
 use crate::config::{ParsedConfigEntry, ParsedConfigPerDevice};
-use crate::amdgpu_device::AmdgpuDevice;
+use crate::amdgpu_device::{AmdgpuDevice, FanCurve};
 
 pub struct AppDevice {
     pub amdgpu_device: AmdgpuDevice,
@@ -135,6 +135,7 @@ impl AppDevice {
             .read(true)
             .write(true)
             .open(fan_zero_rpm_path)?;
+
         let fan_zero_rpm = if fan_zero_rpm { 1 } else { 0 };
         let fan_zero_rpm = format!("{fan_zero_rpm} ");
         file.write_all(fan_zero_rpm.as_bytes())?;
@@ -160,6 +161,47 @@ impl AppDevice {
             else { return Ok(()) };
 
         self.set_fan_target_rpm(fan_target_rpm)
+    }
+
+    pub fn edited_fan_curve(fan_curve_points: &[(u8, u8)]) -> bool {
+        fan_curve_points.iter().any(|p| p != &(0, 0))
+    }
+
+    pub fn validate_fan_curve(fan_curve: &FanCurve, fan_curve_points: &[(u8, u8)]) -> bool {
+        let temp_range = fan_curve.temp_range[0]..fan_curve.temp_range[1];
+        let fan_speed_range = fan_curve.fan_speed_range[0]..fan_curve.fan_speed_range[1];
+
+        for (i, (temp, fan_speed)) in fan_curve_points.iter().enumerate() {
+            if !temp_range.contains(temp) || !fan_speed_range.contains(fan_speed) {
+                let s = format!("{i} {temp} {fan_speed} ");
+                debug!("    Invalid fan_curve point: {s:?}");
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn set_fan_curve(&self) -> io::Result<()> {
+        let Some(ref fan_curve) = self.amdgpu_device.fan_curve else { return Ok(()) };
+        let Some(ref config_fan_curve) = self.config_device.fan_curve_points else { return Ok(()) };
+        debug!("    Set fan_curve points ({config_fan_curve:?})");
+
+        if !Self::validate_fan_curve(fan_curve, config_fan_curve) {
+            return Ok(()); // through
+        }
+
+        let mut file = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&fan_curve.path)?;
+
+        for (i, (temp, fan_speed)) in config_fan_curve.iter().enumerate() {
+            let s = format!("{i} {temp} {fan_speed} ");
+            file.write_all(s.as_bytes())?;
+        }
+
+        Self::commit(&mut file)
     }
 
     pub fn set_sclk_offset(&self) -> io::Result<()> {
@@ -225,6 +267,18 @@ impl AppDevice {
             (self.set_vddgfx_offset(), "vddgfx_offset"),
         ] {
             if let Err(e) = result {
+                debug!(
+                    "{} ({}):    Failed to set {s} ({e:?})",
+                    self.amdgpu_device.pci_bus,
+                    self.amdgpu_device.device_name,
+                );
+            }
+        }
+
+        if self.config_device.fan_curve_points.as_ref().is_some_and(|points| Self::edited_fan_curve(points)) {
+            let s = "fan_curve";
+            let r = self.set_fan_curve();
+            if let Err(e) = r {
                 debug!(
                     "{} ({}):    Failed to set {s} ({e:?})",
                     self.amdgpu_device.pci_bus,

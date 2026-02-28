@@ -263,6 +263,18 @@ pub fn generate_config() -> ron::Result<String> {
                 .acoustic_target_rpm_threshold
                 .as_ref()
                 .map(|ac| ac.rpm_range);
+            let fan_curve_points = dev
+                .fan_curve
+                .as_ref()
+                .map(|fan_curve| fan_curve.points.clone());
+            let _fan_curve_temp_range = dev
+                .fan_curve
+                .as_ref()
+                .map(|fan_curve| fan_curve.temp_range);
+            let _fan_curve_fan_speed_range = dev
+                .fan_curve
+                .as_ref()
+                .map(|fan_curve| fan_curve.fan_speed_range);
 
             Some(ConfigPerDevice {
                 pci: pci.to_string(),
@@ -282,6 +294,9 @@ pub fn generate_config() -> ron::Result<String> {
                 fan_zero_rpm: dev.fan_zero_rpm.map(|f| f.flag),
                 acoustic_target_rpm_threshold,
                 _acoustic_target_rpm_threshold_range,
+                fan_curve_points,
+                _fan_curve_temp_range,
+                _fan_curve_fan_speed_range,
                 entries: vec![entry_example.clone()],
             })
         })

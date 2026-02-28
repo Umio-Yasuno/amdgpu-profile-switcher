@@ -20,6 +20,7 @@ pub struct ParsedConfigPerDevice {
     pub vddgfx_offset: Option<i32>,
     pub fan_zero_rpm: Option<bool>,
     pub acoustic_target_rpm_threshold: Option<u32>,
+    pub fan_curve_points: Option<Vec<(u8, u8)>>,
     pub entries: Vec<ParsedConfigEntry>,
 }
 
@@ -38,6 +39,7 @@ impl ParsedConfigPerDevice {
         || self.vddgfx_offset != new.vddgfx_offset
         || self.fan_zero_rpm != new.fan_zero_rpm
         || self.acoustic_target_rpm_threshold != new.acoustic_target_rpm_threshold
+        || self.fan_curve_points != new.fan_curve_points
     }
 }
 
@@ -76,6 +78,9 @@ pub struct ConfigPerDevice {
     pub fan_zero_rpm: Option<bool>,
     pub acoustic_target_rpm_threshold: Option<u32>,
     pub _acoustic_target_rpm_threshold_range: Option<[u32; 2]>,
+    pub fan_curve_points: Option<Vec<(u8, u8)>>,
+    pub _fan_curve_temp_range: Option<[u8; 2]>,
+    pub _fan_curve_fan_speed_range: Option<[u8; 2]>,
     pub entries: Vec<ConfigEntry>,
 }
 
@@ -174,6 +179,7 @@ impl ConfigPerDevice {
             vddgfx_offset: self.vddgfx_offset,
             fan_zero_rpm: self.fan_zero_rpm,
             acoustic_target_rpm_threshold: self.acoustic_target_rpm_threshold,
+            fan_curve_points: self.fan_curve_points.clone(),
             entries: entries?,
         })
     }

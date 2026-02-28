@@ -84,6 +84,9 @@ fn main() {
                         fan_zero_rpm: None,
                         acoustic_target_rpm_threshold: None,
                         _acoustic_target_rpm_threshold_range: None,
+                        fan_curve_points: None,
+                        _fan_curve_temp_range: None,
+                        _fan_curve_fan_speed_range: None,
                         entries: vec![entry],
                     };
 

@@ -1,7 +1,7 @@
 [package]
 name = "amdgpu-profile-switcher"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 homepage = "https://github.com/Umio-Yasuno/amdgpu-profile-switcher"
 description = "amdgpu-profile-switcher is a simple tool that automatically switches profiles for AMDGPU."

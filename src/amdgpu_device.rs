@@ -20,6 +20,7 @@ pub struct AmdgpuDevice {
     pub sclk_offset: Option<SclkOffset>, // RDNA 4
     pub vddgfx_offset: Option<VddgfxOffset>, // RDNA 2/3/4
     pub fan_zero_rpm: Option<FanZeroRpm>, // RDNA 3/4
+    pub fan_curve: Option<FanCurve>,
     pub acoustic_target_rpm_threshold: Option<AcousticTargetRpmThreshold>, // RDNA 3/4
     pub runtime_status_path: PathBuf,
 }
@@ -60,6 +61,7 @@ impl AmdgpuDevice {
         let fan_zero_rpm = FanZeroRpm::from_sysfs_path(&sysfs_path);
         let acoustic_target_rpm_threshold = AcousticTargetRpmThreshold::from_sysfs_path(&sysfs_path);
         let runtime_status_path = sysfs_path.join("power/runtime_status");
+        let fan_curve = FanCurve::from_sysfs_path(&sysfs_path);
 
         Some(Self {
             pci_bus,
@@ -77,6 +79,7 @@ impl AmdgpuDevice {
             sclk_offset,
             vddgfx_offset,
             fan_zero_rpm,
+            fan_curve,
             acoustic_target_rpm_threshold,
             runtime_status_path,
         })
@@ -101,7 +104,7 @@ impl AmdgpuDevice {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FanZeroRpm {
     pub path: PathBuf,
     pub flag: bool,
@@ -325,4 +328,69 @@ impl AcousticTargetRpmThreshold {
             rpm_range: rpm_range?,
         })
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FanCurve {
+    pub path: PathBuf,
+    pub points: Vec<(u8, u8)>, // (hotspot temp [C], fan speed [%])
+    pub temp_range: [u8; 2],
+    pub fan_speed_range: [u8; 2],
+}
+
+impl FanCurve {
+    pub fn from_sysfs_path<P: Into<PathBuf>>(path: P) -> Option<Self> {
+        let mut points: Vec<(u8, u8)> = Vec::with_capacity(8);
+        let temp_range: Option<[u8; 2]>;
+        let fan_speed_range: Option<[u8; 2]>;
+        let path = path.into().join("gpu_od/fan_ctrl/fan_curve");
+
+        {
+            let s = fs::read_to_string(&path).ok()?;
+            let mut lines = s.lines();
+
+            lines.find(|l| l.starts_with("OD_FAN_CURVE:"));
+
+            while let Some(l) = lines.next() && !l.starts_with("OD_RANGE:") {
+                let first_space = l.find(" ")?;
+                let l = l.get(first_space+1..)?;
+                let (temp, fan_speed) = l.split_once(" ")?;
+                let temp = temp.trim_end_matches("C");
+                let fan_speed = fan_speed.trim_end_matches("%");
+
+                if let (Ok(temp), Ok(fan_speed)) = (temp.parse::<u8>(), fan_speed.parse::<u8>()) {
+                    points.push((temp, fan_speed));
+                }
+            }
+
+            const PRE_TEMP_RANGE: usize = "FAN_CURVE(hotspot temp): ".len();
+            const PRE_FAN_SPEED_RANGE:usize = "FAN_CURVE(fan speed): ".len();
+
+            fn split_range(s: &str, prefix: usize) -> Option<[u8; 2]> {
+                let (min, max) = s.get(prefix..)?.split_once(" ")?;
+                let [min, max] = [min, max].map(|s| {
+                    let len = s.len();
+                    s[..len-1].parse::<u8>().ok()
+                });
+
+                Some([min?, max?])
+            }
+
+            temp_range = lines.next().and_then(|s| split_range(s, PRE_TEMP_RANGE));
+            fan_speed_range = lines.next().and_then(|s| split_range(s, PRE_FAN_SPEED_RANGE));
+        }
+
+        Some(Self {
+            path,
+            points,
+            temp_range: temp_range?,
+            fan_speed_range: fan_speed_range?,
+        })
+    }
+
+/*
+    pub fn is_all_zero_points(&self) -> bool {
+        self.points.iter().all(|v| v == &(0, 0))
+    }
+*/
 }
