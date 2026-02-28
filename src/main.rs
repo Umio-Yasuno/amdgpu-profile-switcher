@@ -202,8 +202,6 @@ fn main() {
                         app.amdgpu_device.pci_bus,
                         app.amdgpu_device.device_name,
                     );
-
-                    ()
                 });
                 std::thread::sleep(std::time::Duration::from_secs(1));
             } else {
@@ -319,7 +317,7 @@ fn main() {
                     app.amdgpu_device.device_name,
                     apply_config.name,
                 );
-                if let Err((e, s)) = app.apply_config(&apply_config) {
+                if let Err((e, s)) = app.apply_config(apply_config) {
                     debug!(
                         "{} ({}): Failed to set {s} for {:?} ({e:?})",
                         app.amdgpu_device.pci_bus,

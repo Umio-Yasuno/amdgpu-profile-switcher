@@ -134,7 +134,7 @@ impl AppDevice {
         let mut file = fs::OpenOptions::new()
             .read(true)
             .write(true)
-            .open(&fan_zero_rpm_path)?;
+            .open(fan_zero_rpm_path)?;
         let fan_zero_rpm = if fan_zero_rpm { 1 } else { 0 };
         let fan_zero_rpm = format!("{fan_zero_rpm} ");
         file.write_all(fan_zero_rpm.as_bytes())?;
@@ -244,27 +244,27 @@ impl AppDevice {
 
     pub fn apply_config(&self, apply_config: &ParsedConfigEntry) -> Result<(), (io::Error, &str)> {
         if let Some(perf_level) = apply_config.perf_level {
-            let _ = self.set_perf_level(perf_level)
+            self.set_perf_level(perf_level)
                 .map_err(|e| (e, "perf_level"))?;
         }
         if let Some(profile) = apply_config.profile {
-            let _ = self.set_power_profile(profile)
+            self.set_power_profile(profile)
                 .map_err(|e| (e, "power_profile"))?;
         }
         if let Some(power_cap_watt) = apply_config.power_cap_watt {
-            let _ = self.set_power_cap(power_cap_watt)
+            self.set_power_cap(power_cap_watt)
                 .map_err(|e| (e, "power_cap"))?;
         }
         if let Some(target_temp) = apply_config.fan_target_temperature {
-            let _ = self.set_fan_target_temp(target_temp)
+            self.set_fan_target_temp(target_temp)
                 .map_err(|e| (e, "fan_target_temp"))?;
         }
         if let Some(minimum_pwm) = apply_config.fan_minimum_pwm {
-            let _ = self.set_fan_minimum_pwm(minimum_pwm)
+            self.set_fan_minimum_pwm(minimum_pwm)
                 .map_err(|e| (e, "fan_minimum_pwm"))?;
         }
         if let Some(fan_target_rpm) = apply_config.acoustic_target_rpm_threshold {
-            let _ = self.set_fan_target_rpm(fan_target_rpm)
+            self.set_fan_target_rpm(fan_target_rpm)
                 .map_err(|e| (e, "fan_target_rpm"))?;
         }
 
