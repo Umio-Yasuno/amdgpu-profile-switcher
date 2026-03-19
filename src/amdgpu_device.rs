@@ -187,9 +187,7 @@ impl VddgfxOffset {
         }
 
         let mut lines = s.lines();
-        let _ = lines.find(|l| l.ends_with("OD_VDDGFX_OFFSET:"))?;
-        let current = lines.next().and_then(parse_mv)?;
-        let s_range = lines.find(|l| l.starts_with("VDDGFX_OFFSET:"))?;
+        let s_range = lines.by_ref().find(|l| l.starts_with("VDDGFX_OFFSET:"))?;
         let range = {
             let mut split = s_range
                 .trim_start_matches("VDDGFX_OFFSET:")
@@ -202,6 +200,9 @@ impl VddgfxOffset {
                 None
             }
         };
+
+        let _ = lines.find(|l| l.ends_with("OD_VDDGFX_OFFSET:"))?;
+        let current = lines.next().and_then(parse_mv)?;
 
         Some(Self {
             current,
